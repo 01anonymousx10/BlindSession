@@ -97,6 +97,12 @@ docker compose up --build
 
 Open http://localhost:3000 in your browser. That's it.
 
+**Update to the latest version:**
+```bash
+git pull origin main
+docker compose up -d --build
+```
+
 **Stop the app:**
 ```bash
 docker compose down
