@@ -32,6 +32,7 @@ services:
       PORT: 3000
       NODE_ENV: production
       DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/encrypted_chat_db
+      DB_SSL: "false"
     depends_on:
       postgres:
         condition: service_healthy
