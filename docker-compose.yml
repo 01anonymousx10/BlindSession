@@ -1,0 +1,41 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: blindsession_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: encrypted_chat_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - blindsession_db_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d encrypted_chat_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # BlindSession App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blindsession_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/encrypted_chat_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  blindsession_db_data:
+    driver: local
