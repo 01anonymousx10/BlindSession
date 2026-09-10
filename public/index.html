@@ -2350,23 +2350,23 @@
     }
 
     .welcome-logo-icon {
-      width: 60px;
-      height: 60px;
-      margin: 0 auto 1.25rem;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 0.75rem;
       background: rgba(0, 255, 157, 0.08);
       border: 1px solid rgba(0, 255, 157, 0.4);
-      border-radius: 12px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--primary);
-      box-shadow: 0 0 15px rgba(0, 255, 157, 0.15);
+      box-shadow: 0 0 12px rgba(0, 255, 157, 0.12);
       animation: logoPulse 4s ease-in-out infinite alternate;
     }
 
     .welcome-logo-icon svg {
-      width: 32px;
-      height: 32px;
+      width: 20px;
+      height: 20px;
     }
 
     .welcome-card h2 {
@@ -4966,14 +4966,6 @@
           </svg>
           <span>Panic Shred</span>
         </button>
-        <button class="lock-session-btn icon-only" onclick="showAboutModal()" title="Help / About" aria-label="Help">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" style="width:14px;height:14px;">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        </button>
       </div>
     </div>
 
@@ -5207,6 +5199,15 @@
               stroke-linejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+          <button id="help-btn" class="action-bar-btn" onclick="showAboutModal()"
+            title="Help / About" aria-label="Help">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </button>
           <div class="action-bar-divider"></div>
