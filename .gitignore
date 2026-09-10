@@ -17,11 +17,13 @@ boot.log
 
 # Internal Planning, Audits & Notes (Excluded from repo)
 audits/
+plans/
 implementation_plan.md
 task.md
 walkthrough.md
 MEMORY.md
 GIT_WORKFLOW.md
+DEPLOYMENT_GUIDE.md
 docs/
 
 # IDE & System Files
