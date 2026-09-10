@@ -130,16 +130,11 @@ body {
   box-shadow: 0 4px 16px rgba(0, 255, 157, 0.35);
 }
 
-/* Main Dashboard — collapsible sidebar (narrow rail by default, expands on hover) */
+/* Main Dashboard — sidebar full width on desktop, off-canvas on mobile */
 .chat-container {
   display: grid;
-  grid-template-columns: var(--sidebar-width, 72px) 1fr;
+  grid-template-columns: 350px 1fr;
   height: 100dvh;
-  transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.chat-container:hover {
-  grid-template-columns: var(--sidebar-expanded, 350px) 1fr;
 }
 
 .sidebar {

@@ -739,10 +739,6 @@
        and on desktop (>1024px). */
     @media (max-width: 1024px) and (min-width: 901px) {
       .chat-container {
-        grid-template-columns: 72px 1fr;
-      }
-
-      .chat-container:hover {
         grid-template-columns: 260px 1fr;
       }
 
@@ -812,10 +808,6 @@
        so the chat gets full width on tablets and narrow laptops. */
     @media (max-width: 900px) {
       .chat-container {
-        grid-template-columns: 1fr;
-      }
-
-      .chat-container:hover {
         grid-template-columns: 1fr;
       }
 
@@ -1084,114 +1076,11 @@
     /* Chat dashboard layout */
     .chat-container {
       display: grid;
-      grid-template-columns: 72px 1fr;
+      grid-template-columns: 350px 1fr;
       height: 100dvh;
       max-height: 100dvh;
       overflow: hidden;
       background: #0a0b10;
-      transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .chat-container:hover {
-      grid-template-columns: 350px 1fr;
-    }
-
-    /* ─── Collapsed sidebar (rail mode — not hovered) ─── */
-    .chat-container:not(:hover) .sidebar {
-      overflow: hidden;
-    }
-
-    /* Profile card: show only avatar, hide info + buttons */
-    .chat-container:not(:hover) .user-profile-card {
-      flex-direction: column;
-      align-items: center;
-      padding: 0.75rem 0.25rem;
-      gap: 0;
-    }
-    .chat-container:not(:hover) .profile-info,
-    .chat-container:not(:hover) .profile-copy-btn,
-    .chat-container:not(:hover) .profile-action-btn {
-      display: none;
-    }
-
-    /* Add contact: hide input, show only + button */
-    .chat-container:not(:hover) .add-contact-row {
-      padding: 0.5rem;
-      justify-content: center;
-    }
-    .chat-container:not(:hover) .add-contact-row input {
-      display: none;
-    }
-    .chat-container:not(:hover) .add-contact-row button {
-      width: 40px;
-      min-width: 40px;
-      padding: 0.5rem;
-      font-size: var(--fs-lg);
-    }
-
-    /* Search: hide input, show only icon */
-    .chat-container:not(:hover) .contact-search-wrapper {
-      padding: 0.5rem;
-      justify-content: center;
-    }
-    .chat-container:not(:hover) .contact-search-wrapper input {
-      display: none;
-    }
-    .chat-container:not(:hover) .contact-search-wrapper .search-icon {
-      margin: 0;
-    }
-
-    /* Contact items: show only avatar centered */
-    .chat-container:not(:hover) .contact-item {
-      padding: 0.5rem;
-      justify-content: center;
-    }
-    .chat-container:not(:hover) .contact-row {
-      justify-content: center;
-    }
-    .chat-container:not(:hover) .contact-info,
-    .chat-container:not(:hover) .contact-menu-btn {
-      display: none;
-    }
-    .chat-container:not(:hover) .contact-avatar-wrapper {
-      margin: 0;
-    }
-
-    /* Unread badge: position over avatar when collapsed */
-    .chat-container:not(:hover) .unread-badge {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      font-size: 9px;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 4px;
-      z-index: 5;
-    }
-    .chat-container:not(:hover) .contact-avatar-wrapper {
-      position: relative;
-    }
-
-    /* Action buttons: icon-only when collapsed */
-    .chat-container:not(:hover) .sidebar-actions {
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.5rem 0.25rem;
-    }
-    .chat-container:not(:hover) .sidebar-actions button {
-      width: 40px;
-      min-width: 40px;
-      padding: 0.5rem;
-      font-size: 0;
-      gap: 0;
-    }
-    .chat-container:not(:hover) .sidebar-actions button svg {
-      width: 18px;
-      height: 18px;
-    }
-    .chat-container:not(:hover) .sidebar-actions button span {
-      display: none;
     }
 
     .sidebar {
@@ -3427,6 +3316,14 @@
       box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
     }
 
+    .lock-session-btn.icon-only {
+      flex: 0 0 auto;
+      width: 36px;
+      min-width: 36px;
+      padding: 0.5rem;
+      gap: 0;
+    }
+
     .lock-session-btn:active {
       transform: scale(0.97);
     }
@@ -3456,7 +3353,8 @@
       transition: all 0.3s ease;
       letter-spacing: 0.2px;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
+      white-space: nowrap;
     }
 
     .panic-shred-btn::before {
@@ -5070,7 +4968,7 @@
         </button>
         <button class="lock-session-btn icon-only" onclick="showAboutModal()" title="Help / About" aria-label="Help">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+            stroke-linejoin="round" style="width:14px;height:14px;">
             <circle cx="12" cy="12" r="10" />
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
