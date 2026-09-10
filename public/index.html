@@ -20,7 +20,8 @@
       --bg-gradient: linear-gradient(135deg, #0a0b10 0%, #161925 100%);
       --card-bg: rgba(22, 25, 37, 0.7);
       --text-primary: #e2e8f0;
-      --text-secondary: #94a3b8;
+      --text-secondary: #a8b5c8;  /* lightened from #94a3b8 for AA at small sizes */
+      --text-tertiary: #7a8696;   /* for the dimmest non-essential text */
       --border-color: rgba(0, 255, 157, 0.15);
       --font-display: 'Outfit', sans-serif;
       --font-mono: 'Roboto Mono', monospace;
@@ -29,6 +30,31 @@
       --radius-md: 10px;
       --radius-lg: 18px;
       --radius-pill: 100px;
+      /* Type scale — 12px floor for readability */
+      --fs-3xl: 2.5rem;    /* 40px — hero */
+      --fs-2xl: 2rem;      /* 32px — page titles */
+      --fs-xl: 1.5rem;     /* 24px — section titles */
+      --fs-lg: 1.125rem;   /* 18px — subtitles */
+      --fs-md: 1rem;       /* 16px — inputs, buttons */
+      --fs-base: 0.9375rem;/* 15px — body, messages */
+      --fs-sm: 0.8125rem;  /* 13px — secondary text */
+      --fs-xs: 0.75rem;    /* 12px — metadata, badges (floor) */
+      /* Font weight scale */
+      --fw-regular: 400;
+      --fw-medium: 500;
+      --fw-semibold: 600;
+      --fw-bold: 700;
+      /* Line-height scale */
+      --leading-tight: 1.2;
+      --leading-normal: 1.5;
+      --leading-loose: 1.7;
+      /* Semantic colors */
+      --color-success: var(--primary);
+      --color-warning: #ff9c6b;
+      --color-error: #ff4d4d;
+      --color-info: var(--secondary);
+      --color-error-text: #ff6b6b;
+      --color-warning-text: #ffb347;
     }
 
     body {
@@ -185,8 +211,8 @@
     }
 
     .brand-text {
-      font-size: 1.4rem;
-      font-weight: 700;
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
       letter-spacing: -0.5px;
       background: linear-gradient(90deg, #ffffff 0%, #a1a1aa 100%);
       -webkit-background-clip: text;
@@ -199,9 +225,9 @@
     }
 
     .hero-content h2 {
-      font-size: 2.6rem;
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: var(--fs-3xl);
+      font-weight: var(--fw-bold);
+      line-height: var(--leading-tight);
       margin-bottom: 1.25rem;
       background: linear-gradient(90deg, #ffffff 0%, var(--primary) 100%);
       -webkit-background-clip: text;
@@ -211,9 +237,9 @@
     }
 
     .hero-content p {
-      font-size: 1.05rem;
+      font-size: var(--fs-lg);
       color: var(--text-secondary);
-      line-height: 1.6;
+      line-height: var(--leading-normal);
       margin-top: 0;
       margin-bottom: 2.5rem;
       animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
@@ -223,7 +249,7 @@
     /* feature-item & tech-feature-list styles are defined later after the tab CSS block */
 
     .hero-footer {
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       color: rgba(255, 255, 255, 0.2);
       animation: fadeIn 1s ease 0.9s forwards;
       opacity: 0;
@@ -352,8 +378,8 @@
       border: none;
       color: var(--text-secondary);
       font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 0.95rem;
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-base);
       cursor: pointer;
       position: relative;
       transition: color 0.3s ease;
@@ -468,12 +494,12 @@
     }
 
     .strength-seg.weak {
-      background: #ff4d4d;
+      background: var(--color-error);
       box-shadow: 0 0 6px rgba(255, 77, 77, 0.5);
     }
 
     .strength-seg.medium {
-      background: #ff9c6b;
+      background: var(--color-warning);
       box-shadow: 0 0 6px rgba(255, 156, 107, 0.5);
     }
 
@@ -483,7 +509,7 @@
     }
 
     .strength-label {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       font-family: var(--font-mono);
       letter-spacing: 0.4px;
       height: 14px;
@@ -492,11 +518,11 @@
     }
 
     .strength-label.weak {
-      color: #ff6b6b;
+      color: var(--color-error-text);
     }
 
     .strength-label.medium {
-      color: #ff9c6b;
+      color: var(--color-warning);
     }
 
     .strength-label.strong {
@@ -543,7 +569,7 @@
     }
 
     .feature-icon {
-      font-size: 1.25rem;
+      font-size: var(--fs-xl);
       width: 44px;
       height: 44px;
       background: rgba(0, 255, 157, 0.05);
@@ -564,17 +590,17 @@
     }
 
     .feature-text h4 {
-      font-size: 0.92rem;
+      font-size: var(--fs-base);
       color: white;
       margin: 0 0 4px 0;
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
     }
 
     .feature-text p {
-      font-size: 0.82rem;
+      font-size: var(--fs-sm);
       color: var(--text-secondary);
       margin: 0;
-      line-height: 1.5;
+      line-height: var(--leading-normal);
     }
 
     /* ─── B&W Theme: new auth elements ──────────────────── */
@@ -593,7 +619,7 @@
     }
 
     body.bw-theme .strength-seg.weak {
-      background: #ff4d4d !important;
+      background: var(--color-error) !important;
     }
 
     body.bw-theme .strength-seg.medium {
@@ -727,7 +753,7 @@
       .user-profile-card .profile-action-btn,
       .user-profile-card .profile-copy-btn {
         padding: 4px 8px;
-        font-size: 0.72rem;
+        font-size: var(--fs-xs);
       }
 
       /* Hide the add-contact row and search — not enough room in compact mode */
@@ -879,8 +905,8 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 50%;
       color: #ffffff;
-      font-size: 2rem;
-      font-weight: 300;
+      font-size: var(--fs-2xl);
+      font-weight: var(--fw-regular);
       line-height: 1;
       cursor: pointer;
       z-index: 100001;
@@ -921,12 +947,12 @@
     h2,
     h3 {
       font-family: var(--font-display);
-      font-weight: 700;
+      font-weight: var(--fw-bold);
       letter-spacing: -0.5px;
     }
 
     .brand-title {
-      font-size: 2.2rem;
+      font-size: var(--fs-2xl);
       background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -940,7 +966,7 @@
       color: white;
       border-radius: 10px;
       padding: 0.95rem 1.25rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-base);
       margin-bottom: 1.25rem;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -955,10 +981,10 @@
     .auth-button {
       background: var(--primary);
       color: #0a0b10;
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       border-radius: 10px;
       padding: 0.95rem;
-      font-size: 1rem;
+      font-size: var(--fs-md);
       letter-spacing: 0.5px;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
@@ -1011,8 +1037,8 @@
       border: 1px dashed var(--primary);
       border-radius: 8px;
       padding: 2.5rem 1rem 1rem;
-      font-size: 0.85rem;
-      color: var(--primary);
+      font-size: var(--fs-sm);
+      color: var(--text-primary);  /* white for long hex strings — neon causes eye strain */
       word-break: break-all;
       margin: 1.5rem 0;
       position: relative;
@@ -1026,11 +1052,11 @@
       border: 1px solid var(--primary);
       color: var(--primary);
       padding: 2px 10px;
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
       border-radius: 4px;
       cursor: pointer;
       font-family: var(--font-display);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       letter-spacing: 0.3px;
       transition: all 0.2s ease;
     }
@@ -1099,13 +1125,13 @@
     }
 
     .contact-name {
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       color: white;
     }
 
     .contact-hash {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
     }
 
@@ -1124,8 +1150,8 @@
       max-width: 65%;
       padding: 0.9rem 1.2rem;
       border-radius: var(--radius-lg);
-      line-height: 1.5;
-      font-size: 0.95rem;
+      line-height: var(--leading-normal);
+      font-size: var(--fs-base);
       position: relative;
       overflow-wrap: break-word;
       word-wrap: break-word;
@@ -1147,7 +1173,7 @@
     .message.sent {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       border: 1px solid rgba(0, 255, 157, 0.45);
-      color: #04121a;
+      color: #02101a;  /* darkened from #04121a for AA on cyan end of gradient */
       /* deep dark text for readability on bright gradient */
       align-self: flex-end;
       border-radius: 18px 18px 2px 18px;
@@ -1187,12 +1213,12 @@
       justify-content: flex-end;
       gap: 6px;
       margin-top: 0.35rem;
-      font-size: 0.7rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
     }
 
     .message-time-text {
-      font-size: 0.7rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
     }
 
@@ -1215,13 +1241,13 @@
       align-items: center;
       gap: 3px;
       font-family: var(--font-mono);
-      font-size: 0.62rem;
-      font-weight: 700;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
       padding: 1px 6px;
       border-radius: 10px;
       background: rgba(255, 91, 91, 0.12);
       border: 1px solid rgba(255, 91, 91, 0.25);
-      color: #ff5b5b;
+      color: var(--color-error-text);
       letter-spacing: 0.3px;
     }
 
@@ -1253,7 +1279,7 @@
     .burn-hourglass {
       display: inline-flex;
       align-items: center;
-      font-size: 0.7rem;
+      font-size: var(--fs-xs);
       transform-origin: center;
       animation: hourglass-tick 1s steps(1) infinite;
     }
@@ -1299,7 +1325,7 @@
     }
 
     .burn-bar-fill.urgent {
-      background: linear-gradient(90deg, #ff4d4d 0%, #ff9c6b 100%);
+      background: linear-gradient(90deg, var(--color-error) 0%, var(--color-warning) 100%);
       box-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
       animation: burn-pulse 0.8s ease-in-out infinite alternate;
     }
@@ -1330,7 +1356,7 @@
       border-radius: 8px;
       color: white;
       padding: 1rem 1.5rem;
-      font-size: 0.95rem;
+      font-size: var(--fs-base);
       min-width: 0;
     }
 
@@ -1344,7 +1370,7 @@
       color: #0a0b10;
       border: none;
       border-radius: 8px;
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       padding: 0 2rem;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -1367,7 +1393,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(255, 255, 255, 0.03);
       color: var(--text-secondary);
-      font-size: 1.15rem;
+      font-size: var(--fs-lg);
       cursor: pointer;
       flex-shrink: 0;
       align-self: center;
@@ -1394,12 +1420,12 @@
       color: rgba(255, 77, 77, 0.7);
       border-radius: 6px;
       padding: 0.4rem 0.75rem;
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       cursor: pointer;
       flex-shrink: 0;
       transition: all 0.2s ease;
       font-family: var(--font-display);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       display: flex;
       align-items: center;
       gap: 5px;
@@ -1407,8 +1433,8 @@
 
     .clear-chat-btn:hover {
       background: rgba(255, 77, 77, 0.1);
-      border-color: #ff4d4d;
-      color: #ff4d4d;
+      border-color: var(--color-error);
+      color: var(--color-error);
       box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
     }
 
@@ -1421,7 +1447,7 @@
       width: 32px;
       height: 32px;
       padding: 0;
-      font-size: 0.9rem;
+      font-size: var(--fs-base);
       line-height: 1;
       cursor: pointer;
       flex-shrink: 0;
@@ -1443,9 +1469,9 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
       color: var(--primary);
-      font-weight: 500;
+      font-weight: var(--fw-medium);
     }
 
     .status-dot {
@@ -1555,7 +1581,7 @@
     body.bw-theme .burn-badge.urgent {
       background: rgba(255, 77, 77, 0.2) !important;
       border-color: rgba(255, 77, 77, 0.5) !important;
-      color: #ff7777 !important;
+      color: var(--color-error-text) !important;
     }
 
     body.bw-theme .message.sent .burn-badge {
@@ -1581,7 +1607,7 @@
     }
 
     body.bw-theme .burn-bar-fill.urgent {
-      background: linear-gradient(90deg, #ff4d4d 0%, #ff9c6b 100%) !important;
+      background: linear-gradient(90deg, var(--color-error) 0%, var(--color-warning) 100%) !important;
     }
 
     body.bw-theme .drag-overlay {
@@ -1667,8 +1693,8 @@
       align-items: center;
       justify-content: center;
       font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 0.85rem;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-sm);
       color: var(--primary);
       letter-spacing: 1px;
     }
@@ -1710,14 +1736,14 @@
     }
 
     .contact-name {
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       color: white;
-      font-size: 0.9rem;
+      font-size: var(--fs-base);
     }
 
     .contact-time {
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
       flex-shrink: 0;
     }
@@ -1730,7 +1756,7 @@
     }
 
     .contact-preview {
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       color: var(--text-secondary);
       white-space: nowrap;
       overflow: hidden;
@@ -1740,7 +1766,7 @@
 
     .contact-hash {
       font-family: var(--font-mono);
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
     }
 
@@ -1752,7 +1778,7 @@
       border: none;
       background: transparent;
       color: var(--text-secondary);
-      font-size: 1.1rem;
+      font-size: var(--fs-lg);
       line-height: 1;
       cursor: pointer;
       border-radius: 6px;
@@ -1816,14 +1842,14 @@
       border: none;
       color: var(--text-primary);
       font-family: var(--font-display);
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
       cursor: pointer;
       transition: background 0.12s ease, color 0.12s ease;
     }
 
     .contact-menu-item:hover {
       background: rgba(255, 77, 77, 0.12);
-      color: #ff6b6b;
+      color: var(--color-error-text);
     }
 
     /* ─── Shredded-account Contact State ────────── */
@@ -1843,9 +1869,9 @@
     }
 
     .shredded-badge {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: #ff8c69;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--color-warning);
       font-family: var(--font-mono);
       letter-spacing: 0.3px;
     }
@@ -1860,8 +1886,8 @@
       border-radius: 10px;
       background: var(--primary);
       color: #0a0b10;
-      font-size: 0.7rem;
-      font-weight: 700;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
       font-family: var(--font-mono);
       padding: 0 5px;
       flex-shrink: 0;
@@ -1881,12 +1907,12 @@
 
     /* ─── Inline Typing Indicator (Sidebar) ──── */
     .contact-typing-inline {
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       color: var(--primary);
       display: flex;
       align-items: center;
       gap: 4px;
-      font-weight: 500;
+      font-weight: var(--fw-medium);
     }
 
     /* ─── Bouncing Typing Dots ────────────────── */
@@ -1996,14 +2022,14 @@
     /* ─── Read Receipt Double Checkmarks ──────── */
     .sent-check {
       color: var(--text-secondary);
-      font-size: 0.8rem;
+      font-size: var(--fs-sm);
       margin-left: 4px;
     }
 
     .read-receipt {
       color: #00d4ff;
-      font-size: 0.8rem;
-      font-weight: 700;
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-bold);
       margin-left: 4px;
       text-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
     }
@@ -2012,8 +2038,8 @@
        Same blue as the read double-tick for a consistent "delivered" color. */
     .delivered-check {
       color: #00d4ff;
-      font-size: 0.8rem;
-      font-weight: 700;
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-bold);
       margin-left: 4px;
       text-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
     }
@@ -2021,7 +2047,7 @@
     /* ─── Chat Header Status Badges ───────────── */
     .chat-hash-text {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
     }
 
@@ -2290,7 +2316,7 @@
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-secondary);
-      font-size: 1.3rem;
+      font-size: var(--fs-xl);
       line-height: 1;
       cursor: pointer;
       display: flex;
@@ -2303,7 +2329,7 @@
     .welcome-dismiss:hover {
       background: rgba(255, 77, 77, 0.15);
       border-color: rgba(255, 77, 77, 0.4);
-      color: #ff7777;
+      color: var(--color-error-text);
     }
 
     .welcome-logo-icon {
@@ -2327,25 +2353,25 @@
     }
 
     .welcome-card h2 {
-      font-size: 1.85rem;
+      font-size: var(--fs-2xl);
       margin: 0 0 0.4rem 0;
       background: linear-gradient(90deg, #ffffff 0%, var(--primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      font-weight: 700;
+      font-weight: var(--fw-bold);
     }
 
     .welcome-subtitle {
-      font-size: 0.95rem;
+      font-size: var(--fs-base);
       color: var(--primary);
       margin: 0 0 1rem 0;
-      font-weight: 500;
+      font-weight: var(--fw-medium);
     }
 
     .welcome-intro {
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
       color: var(--text-secondary);
-      line-height: 1.6;
+      line-height: var(--leading-normal);
       margin: 0 0 1.25rem 0;
       text-align: left;
       background: rgba(0, 0, 0, 0.25);
@@ -2356,7 +2382,7 @@
 
     .welcome-intro strong {
       color: var(--text-primary);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
     }
 
     .welcome-tagline {
@@ -2368,7 +2394,7 @@
     }
 
     .welcome-tag {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       font-family: var(--font-mono);
       color: var(--primary);
       background: rgba(0, 255, 157, 0.06);
@@ -2404,7 +2430,7 @@
     }
 
     .welcome-feature-icon {
-      font-size: 1.15rem;
+      font-size: var(--fs-lg);
       background: rgba(0, 255, 157, 0.06);
       border: 1px solid rgba(0, 255, 157, 0.15);
       width: 34px;
@@ -2417,16 +2443,16 @@
     }
 
     .welcome-feature-text h4 {
-      font-size: 0.82rem;
+      font-size: var(--fs-sm);
       color: white;
       margin: 0 0 3px 0;
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
     }
 
     .welcome-feature-text p {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: var(--leading-normal);
       margin: 0;
     }
 
@@ -2438,8 +2464,8 @@
       border-radius: 12px;
       padding: 0.9rem 1.5rem;
       font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 0.95rem;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-base);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -2456,13 +2482,13 @@
     }
 
     .welcome-action-tip {
-      font-size: 0.82rem;
+      font-size: var(--fs-sm);
       color: var(--text-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-weight: 500;
+      font-weight: var(--fw-medium);
       border-top: 1px dashed rgba(255, 255, 255, 0.08);
       padding-top: 1.25rem;
       flex-wrap: wrap;
@@ -2470,7 +2496,7 @@
 
     .welcome-action-tip strong {
       color: var(--primary);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
     }
 
     .arrow-pulse {
@@ -2499,7 +2525,7 @@
       }
 
       .welcome-card h2 {
-        font-size: 1.5rem;
+        font-size: var(--fs-xl);
       }
     }
 
@@ -2587,7 +2613,7 @@
       border-radius: 14px;
       color: var(--text-primary);
       font-family: var(--font-display);
-      font-size: 0.88rem;
+      font-size: var(--fs-base);
       box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55),
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
       opacity: 0;
@@ -2660,8 +2686,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 0.82rem;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-sm);
       background: rgba(255, 255, 255, 0.08);
     }
 
@@ -2672,7 +2698,7 @@
 
     .toast-message {
       flex: 1;
-      line-height: 1.4;
+      line-height: var(--leading-normal);
       word-break: break-word;
     }
 
@@ -2681,7 +2707,7 @@
       background: none;
       border: none;
       color: var(--text-secondary);
-      font-size: 1.25rem;
+      font-size: var(--fs-xl);
       line-height: 1;
       cursor: pointer;
       padding: 0 4px;
@@ -2706,24 +2732,24 @@
     }
 
     .toast.toast-error::after {
-      background: #ff4d4d;
+      background: var(--color-error);
       box-shadow: 0 0 10px rgba(255, 77, 77, 0.8);
     }
 
     .toast.toast-error .toast-icon {
       background: rgba(255, 77, 77, 0.15);
-      color: #ff4d4d;
+      color: var(--color-error);
       box-shadow: 0 0 10px rgba(255, 77, 77, 0.35);
     }
 
     .toast.toast-warning::after {
-      background: #ff9c6b;
+      background: var(--color-warning);
       box-shadow: 0 0 10px rgba(255, 156, 107, 0.8);
     }
 
     .toast.toast-warning .toast-icon {
       background: rgba(255, 156, 107, 0.15);
-      color: #ff9c6b;
+      color: var(--color-warning);
       box-shadow: 0 0 10px rgba(255, 156, 107, 0.35);
     }
 
@@ -2816,12 +2842,12 @@
     }
 
     .confirm-card.danger::after {
-      background: #ff4d4d;
+      background: var(--color-error);
       box-shadow: 0 0 10px rgba(255, 77, 77, 0.7);
     }
 
     .confirm-icon {
-      font-size: 2.1rem;
+      font-size: var(--fs-2xl);
       margin-bottom: 0.5rem;
       line-height: 1;
       filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
@@ -2835,16 +2861,16 @@
     }
 
     #confirm-title {
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: var(--fs-lg);
+      font-weight: var(--fw-bold);
       color: white;
       margin: 0 0 0.5rem 0;
     }
 
     #confirm-message {
       color: var(--text-secondary);
-      font-size: 0.9rem;
-      line-height: 1.55;
+      font-size: var(--fs-base);
+      line-height: var(--leading-normal)5;
       margin: 0 0 1.5rem 0;
     }
 
@@ -2858,8 +2884,8 @@
       padding: 0.7rem 1.35rem;
       border-radius: 10px;
       font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 0.88rem;
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-base);
       cursor: pointer;
       border: 1px solid transparent;
       transition: all 0.22s ease;
@@ -2882,7 +2908,7 @@
     /* Neon Confirm button — green default */
     #confirm-ok {
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      color: #04121a;
+      color: #02101a;
       box-shadow: 0 0 14px rgba(0, 200, 255, 0.4);
     }
 
@@ -2893,7 +2919,7 @@
 
     /* Danger: solid neon-red fill for destructive actions */
     #confirm-ok.danger {
-      background: linear-gradient(135deg, #ff4d4d 0%, #ff8a3d 100%);
+      background: linear-gradient(135deg, var(--color-error) 0%, var(--color-warning) 100%);
       color: #fff;
       box-shadow: 0 0 14px rgba(255, 77, 77, 0.45);
     }
@@ -3010,8 +3036,8 @@
     }
 
     .profile-label {
-      font-size: 0.82rem;
-      font-weight: 700;
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-bold);
       color: #e8e8e8;
       letter-spacing: 0.2px;
       white-space: nowrap;
@@ -3021,16 +3047,16 @@
 
     .profile-fingerprint {
       font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--primary);
+      font-size: var(--fs-xs);
+      color: var(--text-secondary);
       letter-spacing: 0.3px;
-      opacity: 0.8;
+      opacity: 0.9;
     }
 
     .profile-status {
-      font-size: 0.62rem;
+      font-size: var(--fs-xs);
       color: var(--primary);
-      font-weight: 500;
+      font-weight: var(--fw-medium);
       display: flex;
       align-items: center;
       gap: 4px;
@@ -3080,11 +3106,11 @@
       color: var(--text-secondary);
       border-radius: 6px;
       padding: 4px 8px;
-      font-size: 0.65rem;
+      font-size: var(--fs-xs);
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: var(--font-display);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       flex-shrink: 0;
       letter-spacing: 0.3px;
       text-transform: uppercase;
@@ -3113,7 +3139,7 @@
       color: white;
       padding: 0.55rem 0.75rem;
       font-family: var(--font-mono);
-      font-size: 0.78rem;
+      font-size: var(--fs-sm);
       min-width: 0;
       transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
@@ -3133,8 +3159,8 @@
       color: #0a0b10;
       border: none;
       padding: 0 0.85rem;
-      font-weight: 700;
-      font-size: 0.78rem;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-sm);
       border-radius: 8px;
       cursor: pointer;
       font-family: var(--font-display);
@@ -3176,7 +3202,7 @@
       color: white;
       padding: 0.5rem 0.7rem;
       font-family: var(--font-display);
-      font-size: 0.82rem;
+      font-size: var(--fs-sm);
       min-width: 0;
       transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
@@ -3235,7 +3261,7 @@
 
     .contact-menu .contact-menu-item.clear-history-item:hover {
       background: rgba(255, 156, 107, 0.1);
-      color: #ff9c6b;
+      color: var(--color-warning);
     }
 
     /* ─── Redesigned Sidebar Action Buttons ──────────── */
@@ -3258,8 +3284,8 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: var(--text-primary);
       font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 0.8rem;
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-sm);
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.25s ease;
@@ -3295,8 +3321,8 @@
       border: 1px solid rgba(255, 59, 48, 0.4);
       color: #ff6b5a;
       font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 0.8rem;
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-sm);
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -3316,7 +3342,7 @@
 
     .panic-shred-btn:hover {
       border-color: rgba(255, 59, 48, 0.7);
-      color: #ff4d4d;
+      color: var(--color-error);
       box-shadow: 0 0 16px rgba(255, 59, 48, 0.3), 0 0 32px rgba(255, 59, 48, 0.1);
       animation: shred-pulse 1.5s ease-in-out infinite;
       transform: scale(1.02);
@@ -3596,15 +3622,15 @@
     }
 
     .dashboard-title {
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
       color: white;
       margin: 0 0 0.35rem;
       letter-spacing: -0.3px;
     }
 
     .dashboard-subtitle {
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
       color: var(--text-secondary);
       margin: 0 0 1.75rem;
     }
@@ -3634,8 +3660,8 @@
     }
 
     .metric-label {
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -3644,9 +3670,9 @@
 
     .metric-value {
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
       color: var(--primary);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
     }
 
     /* ─── Refined Chat Header ────────────────────── */
@@ -3711,19 +3737,19 @@
 
     .chat-header-info h2 {
       margin: 0;
-      line-height: 1.3;
+      line-height: var(--leading-tight);
     }
 
     /* Chat header title/subtitle (extracted from inline styles) */
     #chat-recipient-title {
       color: white;
-      font-size: 1.05rem;
-      font-weight: 600;
+      font-size: var(--fs-lg);
+      font-weight: var(--fw-semibold);
     }
 
     #chat-recipient-subtitle {
       font-family: var(--font-mono);
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--text-secondary);
       margin: 0.15rem 0 0;
       /* Truncate the fingerprint line so it never overlaps the presence tag
@@ -3751,8 +3777,8 @@
       align-items: center;
       gap: 5px;
       font-family: var(--font-display);
-      font-size: 0.7rem;
-      font-weight: 600;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
       padding: 2px 8px;
       border-radius: 100px;
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -3819,7 +3845,7 @@
       justify-content: center;
       transition: all 0.2s ease;
       padding: 0;
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
     }
 
     .action-bar-btn:hover {
@@ -3842,7 +3868,7 @@
     .action-bar-btn.clear-btn:hover {
       background: rgba(255, 77, 77, 0.1);
       border-color: rgba(255, 77, 77, 0.25);
-      color: #ff6b6b;
+      color: var(--color-error-text);
     }
 
     .action-bar-divider {
@@ -3871,7 +3897,7 @@
       border-radius: 6px;
       color: var(--text-primary);
       font-family: var(--font-display);
-      font-size: 0.78rem;
+      font-size: var(--fs-sm);
       cursor: pointer;
       outline: none;
       padding: 3px 6px;
@@ -3951,24 +3977,24 @@
     }
 
     .connection-halo.offline .halo-core {
-      background: #ff4d4d;
+      background: var(--color-error);
     }
 
     .connection-halo.offline {
-      color: #ff4d4d;
+      color: var(--color-error);
     }
 
     .connection-halo.rest-mode .halo-core {
-      background: #ff9c6b;
+      background: var(--color-warning);
     }
 
     .connection-halo.rest-mode {
-      color: #ff9c6b;
+      color: var(--color-warning);
     }
 
     .connection-label {
-      font-size: 0.78rem;
-      font-weight: 500;
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-medium);
       font-family: var(--font-display);
     }
 
@@ -4000,14 +4026,14 @@
     .chat-error-state {
       margin: auto;
       text-align: center;
-      color: #ff4d4d;
+      color: var(--color-error);
       max-width: 360px;
     }
 
     .chat-error-state svg {
       width: 48px;
       height: 48px;
-      color: #ff4d4d;
+      color: var(--color-error);
       margin-bottom: 0.75rem;
       filter: drop-shadow(0 0 8px rgba(255, 77, 77, 0.3));
     }
@@ -4154,8 +4180,8 @@
       top: 20px;
       right: 30px;
       color: #ffffff;
-      font-size: 2.5rem;
-      font-weight: 300;
+      font-size: var(--fs-3xl);
+      font-weight: var(--fw-regular);
       cursor: pointer;
       z-index: 100001;
       transition: color 0.2s ease;
@@ -4207,9 +4233,9 @@
       padding: 0 4px;
       border-radius: 9px;
       background: var(--primary);
-      color: #04121a;
-      font-size: 0.65rem;
-      font-weight: 700;
+      color: #02101a;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4234,8 +4260,8 @@
     }
 
     .date-divider-text {
-      font-size: 0.7rem;
-      font-weight: 600;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -4268,7 +4294,7 @@
       border: none;
       color: var(--text-primary);
       font-family: var(--font-display);
-      font-size: 0.82rem;
+      font-size: var(--fs-sm);
       cursor: pointer;
       border-radius: 5px;
       text-align: left;
@@ -4280,7 +4306,7 @@
     }
 
     .msg-context-menu button.danger {
-      color: #ff6b6b;
+      color: var(--color-error-text);
     }
 
     .msg-context-menu button.danger:hover {
@@ -4336,7 +4362,7 @@
       padding: 0.6rem 0.75rem;
       color: white;
       font-family: var(--font-display);
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
       margin-bottom: 1rem;
       outline: none;
     }
@@ -4355,8 +4381,8 @@
       padding: 0.5rem 1.25rem;
       border-radius: 8px;
       font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 0.85rem;
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-sm);
       cursor: pointer;
       border: 1px solid;
     }
@@ -4370,7 +4396,7 @@
     .image-preview-send {
       background: var(--primary);
       border-color: var(--primary);
-      color: #04121a;
+      color: #02101a;
     }
 
     /* ─── Typing indicator in chat header ────────────────── */
@@ -4378,9 +4404,9 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       color: var(--secondary);
-      font-weight: 600;
+      font-weight: var(--fw-semibold);
       margin-left: 6px;
     }
 
@@ -4464,7 +4490,7 @@
       <div class="auth-container">
         <div class="logo-mobile-only" style="display: none; text-align: center; margin-bottom: 2rem;">
           <h1 class="brand-title">BlindSession</h1>
-          <p style="color: var(--text-secondary); font-size: 0.95rem;">Server-Blind End-to-End Encrypted Messenger</p>
+          <p style="color: var(--text-secondary); font-size: var(--fs-base);">Server-Blind End-to-End Encrypted Messenger</p>
         </div>
 
         <div id="auth-tabs" class="auth-tabs-bar">
@@ -4474,7 +4500,7 @@
 
         <!-- Registration -->
         <div id="register-tab" class="auth-tab">
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          <p style="color: var(--text-secondary); font-size: var(--fs-sm); margin-bottom: 1.5rem;">
             Generate your cryptographic identity keys. Your identity key fingerprint will act as your address.
           </p>
           <div class="password-field-wrapper">
@@ -4511,7 +4537,7 @@
           </div>
 
           <div id="reg-result" class="hidden">
-            <p style="color: var(--primary); font-size: 0.9rem; font-weight:600; margin-top: 1.5rem;">Cryptographic Keys
+            <p style="color: var(--primary); font-size: var(--fs-base); font-weight:600; margin-top: 1.5rem;">Cryptographic Keys
               Generated!</p>
             <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.5rem;">Your Public Fingerprint (Share
               this with contacts):</p>
@@ -4554,7 +4580,7 @@
 
         <!-- Login -->
         <div id="login-tab" class="auth-tab hidden">
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          <p style="color: var(--text-secondary); font-size: var(--fs-sm); margin-bottom: 1.5rem;">
             Enter your local passphrase to decrypt your identity keys and unlock your session.
           </p>
           <div class="password-field-wrapper">
@@ -4570,7 +4596,7 @@
           </div>
           <button onclick="handleUnlockIdentity()" class="auth-button" style="width: 100%;">Unlock & Connect</button>
           <div id="login-error" class="error-message hidden"
-            style="color: #ff4d4d; font-size:0.85rem; margin-top:1rem; text-align:center;"></div>
+            style="color: var(--color-error); font-size:0.85rem; margin-top:1rem; text-align:center;"></div>
 
           <!-- Forgot Passphrase -->
           <div style="margin-top:0.85rem; text-align:center;">
@@ -4582,7 +4608,7 @@
           <!-- Recovery Panel (hidden by default) -->
           <div id="recovery-panel" class="hidden"
             style="margin-top:1.25rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,165,0,0.3); border-radius:6px; padding:1rem;">
-            <p style="font-size:0.78rem; color:#ffb347; font-weight:600; margin:0 0 0.5rem; display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Passphrase Recovery</p>
+            <p style="font-size:var(--fs-sm); color:var(--color-warning-text); font-weight:var(--fw-semibold); margin:0 0 0.5rem; display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Passphrase Recovery</p>
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 0.75rem; line-height:1.4;">
               Enter your 12-word Master Recovery Code to set a new passphrase.
             </p>
@@ -4599,17 +4625,17 @@
                 placeholder="New Passphrase (min 8 chars)" style="margin-bottom:0;">
             </div>
             <button onclick="handleRecoveryReset()" class="auth-button"
-              style="width:100%; background:rgba(255,165,0,0.15); border:1px solid #ffb347; color:#ffb347;">Reset
+              style="width:100%; background:rgba(255,165,0,0.15); border:1px solid var(--color-warning-text); color:var(--color-warning-text);">Reset
               Passphrase</button>
             <div id="recovery-error" class="hidden"
-              style="color:#ff4d4d; font-size:0.78rem; margin-top:0.5rem; text-align:center;"></div>
+              style="color:var(--color-error); font-size:var(--fs-sm); margin-top:0.5rem; text-align:center;"></div>
           </div>
         </div>
 
         <!-- Bypass/Demo mode -->
         <div
           style="margin-top: 1.5rem; text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1.5rem;">
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem;">Want a quick offline
+          <p style="color: var(--text-secondary); font-size: var(--fs-sm); margin-bottom: 0.75rem;">Want a quick offline
             test?</p>
           <button onclick="handleInstantDemo()" class="auth-button"
             style="width: 100%; background: rgba(0, 255, 157, 0.1); border: 1px solid var(--primary); color: var(--primary); display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Instant Demo Mode (No DB/Passphrase)
@@ -4727,17 +4753,17 @@
           <div
             style="margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 8px;">
             <p
-              style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600; font-family: var(--font-display);">
+              style="font-size: var(--fs-sm); color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);">
               YOUR DETERMINISTIC NAME: <span id="verify-my-name" style="color: var(--primary);"></span></p>
             <p id="verify-my-fp"
-              style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all; color: white; line-height: 1.5; margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
+              style="font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; color: white; line-height: var(--leading-normal); margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
             </p>
 
             <p
-              style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600; font-family: var(--font-display);">
+              style="font-size: var(--fs-sm); color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);">
               CONTACT'S DETERMINISTIC NAME: <span id="verify-contact-name" style="color: var(--primary);"></span></p>
             <p id="verify-contact-fp"
-              style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all; color: white; line-height: 1.5; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
+              style="font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; color: white; line-height: var(--leading-normal); background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
             </p>
           </div>
 
@@ -4766,12 +4792,12 @@
 
           <div style="margin-top: 1.5rem; text-align: left;">
             <label
-              style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.5rem; font-weight: 600; font-family: var(--font-display);">DISPLAY
+              style="font-size: var(--fs-sm); color: var(--text-secondary); display: block; margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);">DISPLAY
               NAME</label>
             <input type="text" id="edit-display-name-input" class="auth-input"
               style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.75rem; color: white;"
               placeholder="e.g. Alice Cooper">
-            <p style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4;">
+            <p style="font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 0.5rem; line-height: var(--leading-normal);">
               * Note: Your name is shared securely over E2EE. Your contacts will see it update in real time.
             </p>
           </div>
@@ -4779,12 +4805,12 @@
           <div
             style="margin-top: 1.25rem; text-align: left; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem;">
             <label
-              style="font-size: 0.8rem; color: #ff6b6b; display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem; font-weight: 600; font-family: var(--font-display);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              style="font-size: var(--fs-sm); color: var(--color-error-text); display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               DURESS PASSPHRASE (OPTIONAL)</label>
             <input type="password" id="edit-duress-passphrase-input" class="auth-input"
               style="width: 100%; box-sizing: border-box; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,77,77,0.2); border-radius: 4px; padding: 0.75rem; color: white;"
               placeholder="Set a secondary panic-shred passphrase">
-            <p style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4;">
+            <p style="font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 0.5rem; line-height: var(--leading-normal);">
               * Entering this passphrase on the login screen silently wipes all local keys, history, and deletes the
               account from the server.
             </p>
@@ -4962,8 +4988,8 @@
       <div id="drag-overlay" class="drag-overlay hidden">
         <div class="drag-overlay-content">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 3rem; height: 3rem; color: var(--primary);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <p style="margin-top: 8px; font-weight: 600;">Drop image to encrypt &amp; share</p>
-          <p style="margin-top: 4px; font-size: 0.78rem; opacity: 0.7;">Scanning…</p>
+          <p style="margin-top: 8px; font-weight: var(--fw-semibold);">Drop image to encrypt &amp; share</p>
+          <p style="margin-top: 4px; font-size: var(--fs-sm); opacity: 0.7;">Scanning…</p>
         </div>
       </div>
 

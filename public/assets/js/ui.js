@@ -2855,13 +2855,13 @@ function updateConnectionStatus(status) {
     if (label) { label.textContent = 'Connected'; label.style.color = 'var(--primary)'; }
   } else if (status === 'connecting' || status === 'authenticating') {
     if (halo) halo.classList.add('connecting');
-    if (label) { label.textContent = 'Connecting...'; label.style.color = '#00b3ff'; }
+    if (label) { label.textContent = 'Connecting...'; label.style.color = 'var(--color-info)'; }
   } else if (status === 'offline-mode') {
     if (halo) halo.classList.add('rest-mode');
-    if (label) { label.textContent = 'REST Mode'; label.style.color = '#ff9c6b'; }
+    if (label) { label.textContent = 'REST Mode'; label.style.color = 'var(--color-warning)'; }
   } else {
     if (halo) halo.classList.add('offline');
-    if (label) { label.textContent = 'Offline'; label.style.color = '#ff4d4d'; }
+    if (label) { label.textContent = 'Offline'; label.style.color = 'var(--color-error)'; }
   }
 }
 
