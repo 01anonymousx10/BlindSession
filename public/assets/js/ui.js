@@ -1095,6 +1095,7 @@ function renderContactsList() {
     const item = document.createElement('div');
     item.className = 'contact-item';
     item.dataset.fingerprint = contact.fingerprint;
+    item.dataset.name = contact.displayName || window.SecureCrypto.hashToName(contact.fingerprint);
     if (clientSession.activeContact && clientSession.activeContact.fingerprint === contact.fingerprint) {
       item.classList.add('active');
     }
@@ -1183,12 +1184,41 @@ function renderContactsList() {
 
     listEl.appendChild(item);
   });
+
+  // Update document title and favicon with total unread count
+  updateUnreadBadge();
 }
 
 // Close any open contact ⋯ menu when clicking elsewhere
 document.addEventListener('click', () => {
   document.querySelectorAll('.contact-menu:not(.hidden)').forEach(m => m.classList.add('hidden'));
 });
+
+// ─── Document title + favicon unread badge ─────────
+const _BASE_TITLE = 'BlindSession | Server-Blind End-to-End Encrypted Chat';
+const _FAVICON_BASE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ff9d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E";
+
+function updateUnreadBadge() {
+  let total = 0;
+  Object.values(clientSession.unreadCounts || {}).forEach(c => { total += (c || 0); });
+  // Update title
+  document.title = total > 0 ? `(${total > 99 ? '99+' : total}) BlindSession` : _BASE_TITLE;
+  // Update favicon with badge number
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    document.head.appendChild(link);
+  }
+  if (total > 0) {
+    const badge = total > 99 ? '99' : String(total);
+    const badgeColor = '%23ff4d4d';
+    link.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' ry='2' fill='none' stroke='%2300ff9d' stroke-width='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4' fill='none' stroke='%2300ff9d' stroke-width='2'/%3E%3Ccircle cx='19' cy='6' r='5' fill='" + badgeColor + "'/%3E%3Ctext x='19' y='9' text-anchor='middle' fill='white' font-size='7' font-family='sans-serif' font-weight='bold'%3E" + (total > 99 ? '99+' : badge) + "%3C/text%3E%3C/svg%3E";
+  } else {
+    link.href = _FAVICON_BASE;
+  }
+}
 
 /**
  * 4. Contact Selection & Key Agreement Handshake
@@ -3618,21 +3648,70 @@ function filterContacts(query) {
 
   const items = listEl.querySelectorAll('.contact-item');
   const normalizedQuery = query.toLowerCase().trim();
+  let visibleCount = 0;
 
   items.forEach(item => {
     if (!normalizedQuery) {
       item.style.display = '';
+      visibleCount++;
       return;
     }
     const fp = (item.dataset.fingerprint || '').toLowerCase();
-    const name = `user ${fp}`.toLowerCase();
+    // Match against the rendered contact name (data-name) and fingerprint
+    const name = (item.dataset.name || '').toLowerCase();
     if (fp.includes(normalizedQuery) || name.includes(normalizedQuery)) {
       item.style.display = '';
+      visibleCount++;
     } else {
       item.style.display = 'none';
     }
   });
+
+  // Empty search state — show "No contacts match" when all are filtered out
+  let emptyMsg = listEl.querySelector('.search-empty-state');
+  if (visibleCount === 0 && normalizedQuery) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('div');
+      emptyMsg.className = 'search-empty-state';
+      listEl.appendChild(emptyMsg);
+    }
+    emptyMsg.textContent = `No contacts match "${query.trim()}"`;
+    emptyMsg.style.display = '';
+  } else if (emptyMsg) {
+    emptyMsg.style.display = 'none';
+  }
 }
+
+// ─── Global Keyboard Shortcuts ─────────────────────
+document.addEventListener('keydown', (e) => {
+  // Ignore shortcuts when typing in an input/textarea (except Escape)
+  const typing = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+  const ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+  // Ctrl/Cmd+K → focus contact search
+  if (ctrlOrCmd && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    const search = document.getElementById('contact-search');
+    if (search) { search.focus(); search.select(); }
+    return;
+  }
+
+  // Ctrl/Cmd+L → lock session
+  if (ctrlOrCmd && e.key.toLowerCase() === 'l') {
+    e.preventDefault();
+    if (typeof handleLockSession === 'function') handleLockSession();
+    return;
+  }
+
+  // Escape → close active chat (if no modal is open)
+  if (e.key === 'Escape' && !typing) {
+    const openModal = document.querySelector('.image-lightbox:not(.hidden), #image-preview-modal, .msg-context-menu');
+    if (openModal) return; // let modal-specific Escape handlers work
+    if (clientSession.activeContact && typeof handleCloseChat === 'function') {
+      handleCloseChat();
+    }
+  }
+});
 
 // ─── Drag-and-Drop & Paste Listeners Initializer ─────────────────
 document.addEventListener('DOMContentLoaded', () => {
