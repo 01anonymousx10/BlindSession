@@ -16,10 +16,8 @@ logs/
 boot.log
 
 # Internal Planning, Audits & Notes (Excluded from repo)
+audits/
 implementation_plan.md
-flow_audit_and_improvements.md
-codebase_audit_report.md
-codebase_audit_prompts.md
 task.md
 walkthrough.md
 MEMORY.md

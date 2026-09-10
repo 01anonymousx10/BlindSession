@@ -29,7 +29,7 @@
       background: var(--bg-gradient);
       color: var(--text-primary);
       font-family: var(--font-display);
-      height: 100vh;
+      height: 100dvh;
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -39,7 +39,7 @@
     .landing-wrapper {
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
-      height: 100vh;
+      height: 100dvh;
       background: #050608;
     }
 
@@ -649,6 +649,150 @@
       }
     }
 
+    /* ─── Mobile Chat Drawer (sidebar toggle) ─────────── */
+    /* Hamburger button — hidden on desktop, shown on mobile */
+    .sidebar-toggle-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .sidebar-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(0, 255, 157, 0.25);
+    }
+
+    .sidebar-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Backdrop — covers chat area when drawer is open on mobile */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .sidebar-backdrop.open {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Mobile breakpoint for the chat screen */
+    @media (max-width: 768px) {
+      .chat-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 86%;
+        max-width: 340px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-toggle-btn {
+        display: flex;
+      }
+
+      /* When the drawer is open on mobile, the hamburger becomes a back/close mark */
+      .sidebar-toggle-btn.is-open svg {
+        /* keep the lines; JS toggles aria-expanded. Visual cue via .is-open */
+      }
+
+      .chat-header {
+        padding: 0.85rem 1rem;
+      }
+    }
+
+    /* ─── Reduced Motion ─────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+
+      /* Keep a single short fade for functional feedback only */
+      .message.new-bubble {
+        animation: fadeIn 0.15s ease forwards;
+      }
+    }
+
+    /* ─── Accessible lightbox close button ───────────── */
+    .image-lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      color: #ffffff;
+      font-size: 2rem;
+      font-weight: 300;
+      line-height: 1;
+      cursor: pointer;
+      z-index: 100001;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      user-select: none;
+      padding: 0;
+    }
+
+    .image-lightbox-close:hover,
+    .image-lightbox-close:focus-visible {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: var(--primary);
+      color: var(--primary);
+      outline: none;
+    }
+
+    .image-lightbox-close:focus-visible {
+      box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.35);
+    }
+
+    /* Visible focus ring for all interactive elements (a11y) */
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
     h1,
     h2,
     h3 {
@@ -758,8 +902,8 @@
     .chat-container {
       display: grid;
       grid-template-columns: 350px 1fr;
-      height: 100vh;
-      max-height: 100vh;
+      height: 100dvh;
+      max-height: 100dvh;
       overflow: hidden;
       background: #0a0b10;
     }
@@ -3785,7 +3929,7 @@
       top: 0;
       left: 0;
       width: 100vw;
-      height: 100vh;
+      height: 100dvh;
       background: rgba(0, 0, 0, 0.92);
       display: flex;
       align-items: center;
@@ -4044,8 +4188,10 @@
 
   <!-- CHAT INTERFACE SCREEN -->
   <div id="chat-screen" class="chat-container hidden">
+    <!-- Mobile backdrop — click to close the drawer -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
     <!-- Sidebar Panel -->
-    <div class="sidebar">
+    <div id="chat-sidebar" class="sidebar">
       <!-- User Profile Card -->
       <div class="user-profile-card">
         <div class="profile-identicon-wrapper">
@@ -4308,6 +4454,16 @@
       <!-- Header -->
       <div class="chat-header">
         <div class="chat-header-left">
+          <!-- Mobile sidebar toggle (hamburger) — hidden on desktop -->
+          <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" onclick="toggleMobileSidebar()"
+            aria-label="Open contacts" aria-expanded="false" aria-controls="chat-sidebar" title="Contacts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
           <div class="chat-header-avatar-wrapper">
             <div id="chat-header-avatar" class="chat-header-avatar"></div>
             <span id="chat-header-avatar-dot" class="chat-header-avatar-dot offline"></span>
@@ -4555,8 +4711,10 @@
   <!-- ─── In-Chat Image Lightbox ─────────────────────────── -->
   <!-- Click an image in chat → full-screen overlay viewer.
        Click anywhere or press ESC to close. No download. -->
-  <div id="image-lightbox" class="image-lightbox" style="display:none;">
-    <span class="image-lightbox-close" onclick="closeImageLightbox()">&times;</span>
+  <div id="image-lightbox" class="image-lightbox" style="display:none;" role="dialog"
+    aria-modal="true" aria-label="Image preview">
+    <button type="button" class="image-lightbox-close" onclick="closeImageLightbox()"
+      aria-label="Close image preview">&times;</button>
     <img id="image-lightbox-img" class="image-lightbox-img" src="" alt="" />
   </div>
 

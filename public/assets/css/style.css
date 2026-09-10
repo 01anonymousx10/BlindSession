@@ -517,8 +517,8 @@ body {
   .chat-container {
     grid-template-columns: 1fr;
   }
-  
-  .sidebar {
-    display: none; /* In production, we'd add toggling for mobile layout */
-  }
+
+  /* Sidebar is now an off-canvas drawer controlled by .sidebar.open
+     and a hamburger toggle (see inline <style> in index.html).
+     Do NOT hide it — that made contacts unreachable on mobile. */
 }

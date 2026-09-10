@@ -1152,6 +1152,10 @@ async function handleSelectContact(contact) {
     welcomeOverlay.classList.add('hidden');
   }
 
+  // On mobile, close the sidebar drawer after a contact is chosen so the
+  // chat area becomes the focus. No-op on desktop.
+  if (typeof closeMobileSidebar === 'function') closeMobileSidebar();
+
   // Send inactive state for previous contact and clear local chatActive
   // state so it doesn't show a stale "Active in chat" badge if we switch back.
   if (clientSession.activeContact && clientSession.activeContact.fingerprint !== contact.fingerprint) {
@@ -2262,17 +2266,32 @@ function escapeHTML(str) {
 /**
  * Open an image in a full-screen lightbox overlay.
  * Called when the user clicks an image in the chat.
+ * Accessibility: moves focus to the close button, sets alt text,
+ * and traps keyboard focus inside the dialog while open.
  */
-function openImageLightbox(dataUrl) {
+let _lightboxLastFocus = null;
+
+function openImageLightbox(dataUrl, altText) {
   const lightbox = document.getElementById('image-lightbox');
   const img = document.getElementById('image-lightbox-img');
   if (!lightbox || !img) return;
+  // Remember the element that triggered the lightbox so we can
+  // restore focus when it closes (WCAG 2.4.3).
+  _lightboxLastFocus = document.activeElement;
   img.src = dataUrl;
+  // Use a meaningful alt if provided; fall back to a generic label
+  // rather than empty (empty alt marks an image as decorative).
+  img.alt = (altText && typeof altText === 'string' && altText.trim())
+    ? altText.trim()
+    : 'Encrypted image preview';
   lightbox.style.display = 'flex';
+  // Move focus to the close button so keyboard users can act immediately
+  const closeBtn = lightbox.querySelector('.image-lightbox-close');
+  if (closeBtn) closeBtn.focus();
 }
 
 /**
- * Close the image lightbox overlay.
+ * Close the image lightbox overlay and restore focus.
  */
 function closeImageLightbox() {
   const lightbox = document.getElementById('image-lightbox');
@@ -2280,6 +2299,11 @@ function closeImageLightbox() {
   lightbox.style.display = 'none';
   const img = document.getElementById('image-lightbox-img');
   if (img) img.src = '';
+  // Restore focus to the triggering element
+  if (_lightboxLastFocus && typeof _lightboxLastFocus.focus === 'function') {
+    try { _lightboxLastFocus.focus(); } catch (e) {}
+  }
+  _lightboxLastFocus = null;
 }
 
 // Close lightbox on click of the dark background (not the image itself)
@@ -2294,19 +2318,90 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   if (e.target.classList && e.target.classList.contains('chat-image-preview')) {
     const fullUrl = e.target.getAttribute('data-full');
-    if (fullUrl) openImageLightbox(fullUrl);
-  }
-});
-
-// Close lightbox on ESC key
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const lightbox = document.getElementById('image-lightbox');
-    if (lightbox && lightbox.style.display !== 'none') {
-      closeImageLightbox();
+    if (fullUrl) {
+      // Try to derive a meaningful alt from sibling/parent context
+      let altText = 'Encrypted image';
+      const bubble = e.target.closest('.message');
+      if (bubble) {
+        const meta = bubble.querySelector('.message-time-text');
+        if (meta && meta.textContent) altText = `Encrypted image · ${meta.textContent.trim()}`;
+      }
+      openImageLightbox(fullUrl, altText);
     }
   }
 });
+
+// Close lightbox on ESC key + focus trap while open
+document.addEventListener('keydown', (e) => {
+  const lightbox = document.getElementById('image-lightbox');
+  if (!lightbox || lightbox.style.display === 'none') return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeImageLightbox();
+    return;
+  }
+  // Focus trap: keep Tab focus within the dialog
+  if (e.key === 'Tab') {
+    const focusable = lightbox.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+});
+
+// ─── Mobile Sidebar Drawer ──────────────────────────
+/**
+ * Open the contacts sidebar as an off-canvas drawer on mobile.
+ * On desktop this is a no-op (the sidebar is always visible).
+ */
+function openMobileSidebar() {
+  const sidebar = document.getElementById('chat-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const toggle = document.getElementById('sidebar-toggle-btn');
+  if (!sidebar) return;
+  sidebar.classList.add('open');
+  if (backdrop) backdrop.classList.add('open');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.classList.add('is-open');
+  }
+}
+
+/**
+ * Close the mobile sidebar drawer.
+ */
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('chat-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const toggle = document.getElementById('sidebar-toggle-btn');
+  if (!sidebar) return;
+  sidebar.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('open');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.classList.remove('is-open');
+  }
+}
+
+/**
+ * Toggle the mobile sidebar drawer open/closed.
+ */
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('chat-sidebar');
+  if (!sidebar) return;
+  if (sidebar.classList.contains('open')) {
+    closeMobileSidebar();
+  } else {
+    openMobileSidebar();
+  }
+}
 
 // ─── Themed Toast Notification (replaces native alert) ──────────
 const TOAST_ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
