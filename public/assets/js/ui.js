@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update typing indicator in active chat
       if (clientSession.activeContact && clientSession.activeContact.fingerprint === senderHash) {
         renderTypingIndicator(senderHash, isTyping);
+        updateActiveChatPresence(); // refresh header "typing…" state
       }
       // Update sidebar inline typing
       renderContactsList();
@@ -1113,7 +1114,7 @@ function renderContactsList() {
       const isMine = contact.lastMsg.sender === clientSession.identityKeyHash;
       const raw = contact.lastMsg.text || '';
       if (contact.lastMsg.isImage) {
-        previewText = (isMine ? 'You: ' : '') + '📷 Image';
+        previewText = (isMine ? 'You: ' : '') + 'Image';
       } else if (contact.lastMsg.sender === 'system') {
         previewText = raw;
       } else {
@@ -1357,6 +1358,7 @@ function updateActiveChatPresence() {
   const fp = clientSession.activeContact.fingerprint;
   const isOnline = clientSession.presence[fp] === 'online';
   const isActive = clientSession.chatActive[fp];
+  const isTyping = clientSession.typing[fp];
   const subtitleEl = document.getElementById('chat-recipient-subtitle');
   const headerDot = document.getElementById('chat-header-avatar-dot');
 
@@ -1365,7 +1367,11 @@ function updateActiveChatPresence() {
   // Build segmented fingerprint (blocks of 8) as the base subtitle text
   const formattedFp = formatFingerprint(fp);
   let statusHtml = `<span class="chat-hash-text" style="cursor:pointer;" title="Click to copy fingerprint" onclick="copyToClipboard('${fp}','Fingerprint copied!');">${formattedFp}</span>`;
-  if (isActive) {
+
+  // Typing indicator takes priority over presence tags
+  if (isTyping) {
+    statusHtml += ` <span class="header-typing">typing<span class="header-typing-dots"><span></span><span></span><span></span></span></span>`;
+  } else if (isActive) {
     statusHtml += ' <span class="presence-tag active-in-chat"><span class="tag-dot"></span>Active in chat</span>';
   } else if (isOnline) {
     statusHtml += ' <span class="presence-tag online"><span class="tag-dot"></span>Online</span>';
@@ -1837,7 +1843,7 @@ async function handleIncomingE2eeMessage(msg) {
         renderContactsList();
 
         // Desktop notification + chime
-        const displayBody = isImage ? '📷 Image' : decryptedText;
+        const displayBody = isImage ? 'Image' : decryptedText;
         triggerBackgroundNotification(msg.sender_hash, displayBody);
       }
     } catch (err) {
@@ -2012,9 +2018,38 @@ function renderActiveChatMessages() {
       return;
     }
 
+    // ── Date separator ─────────────────────────────────
+    // Insert a divider when the calendar day changes between messages.
+    const msgDate = new Date(msg.timestamp);
+    const prevMsg = validHistory[index - 1];
+    const prevDate = prevMsg ? new Date(prevMsg.timestamp) : null;
+    if (!prevDate || msgDate.toDateString() !== prevDate.toDateString()) {
+      const divider = document.createElement('div');
+      divider.className = 'date-divider';
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      let label;
+      if (msgDate.toDateString() === today.toDateString()) {
+        label = 'Today';
+      } else if (msgDate.toDateString() === yesterday.toDateString()) {
+        label = 'Yesterday';
+      } else {
+        label = msgDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      divider.innerHTML = `<span class="date-divider-text">${label}</span>`;
+      messagesBox.appendChild(divider);
+    }
+
     const isSent = msg.sender === clientSession.identityKeyHash;
     const msgEl = document.createElement('div');
     msgEl.className = `message ${isSent ? 'sent' : 'received'}`;
+
+    // Store message data for context menu (copy / delete)
+    msgEl.dataset.msgText = msg.isImage ? '' : (msg.text || '');
+    msgEl.dataset.msgTimestamp = msg.timestamp;
+    msgEl.dataset.msgIsImage = msg.isImage ? 'true' : 'false';
+    msgEl.dataset.msgSender = msg.sender;
 
     // Assign ID to element for timer tracking
     const messageId = `msg-${fp.substring(0, 6)}-${index}-${msg.timestamp}`;
@@ -2082,7 +2117,7 @@ function renderActiveChatMessages() {
       msgEl.classList.add('has-burn');
       burnBadgeHtml = `
         <span class="burn-badge${urgent ? ' urgent' : ''}">
-          <span class="burn-hourglass">⏳</span>
+          <span class="burn-hourglass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M6 2v6a6 6 0 0 0 6 6 6 6 0 0 0 6-6V2M6 22v-6a6 6 0 0 1 6-6 6 6 0 0 1 6 6v6"/></svg></span>
           <span class="burn-seconds-active">${formatBurnCountdown(remaining)}</span>
         </span>`;
       burnBarHtml = `
@@ -2132,7 +2167,7 @@ function renderActiveChatMessages() {
       // Burn timer is configured but message not read yet — idle hint
       burnBadgeHtml = `
         <span class="burn-badge idle">
-          <span class="burn-hourglass">⏳</span>
+          <span class="burn-hourglass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M6 2v6a6 6 0 0 0 6 6 6 6 0 0 0 6-6V2M6 22v-6a6 6 0 0 1 6-6 6 6 0 0 1 6 6v6"/></svg></span>
           <span class="burn-seconds-idle">${getBurnTimerText(msg.burnTimer)}</span>
         </span>`;
     }
@@ -2154,8 +2189,185 @@ function renderActiveChatMessages() {
   // the ones that are genuinely new (e.g. a freshly arrived message).
   lastRenderedMsgCount[fp] = validHistory.length;
 
-  messagesBox.scrollTop = messagesBox.scrollHeight;
+  // Preserve scroll position if user scrolled up; otherwise stick to bottom.
+  // The scroll-to-bottom button visibility is handled by the scroll listener.
+  if (!_userScrolledUp) {
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+  updateScrollBottomBadge();
 }
+
+// ─── Scroll-to-bottom button logic ──────────────────
+// Tracks whether the user has scrolled up from the bottom of the chat
+// messages container, and shows/hides the scroll-to-bottom button with
+// an unread count badge.
+let _userScrolledUp = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const messagesBox = document.getElementById('chat-messages');
+  const scrollBtn = document.getElementById('scroll-bottom-btn');
+  if (!messagesBox || !scrollBtn) return;
+
+  messagesBox.addEventListener('scroll', () => {
+    const atBottom = messagesBox.scrollHeight - messagesBox.scrollTop - messagesBox.clientHeight < 80;
+    _userScrolledUp = !atBottom;
+    if (atBottom) {
+      scrollBtn.classList.add('hidden');
+      const badge = document.getElementById('scroll-bottom-badge');
+      if (badge) { badge.classList.add('hidden'); badge.textContent = '0'; }
+    } else {
+      scrollBtn.classList.remove('hidden');
+    }
+  });
+
+  scrollBtn.addEventListener('click', () => {
+    messagesBox.scrollTo({ top: messagesBox.scrollHeight, behavior: 'smooth' });
+    _userScrolledUp = false;
+    scrollBtn.classList.add('hidden');
+    const badge = document.getElementById('scroll-bottom-badge');
+    if (badge) { badge.classList.add('hidden'); badge.textContent = '0'; }
+    // Mark messages as read since we jumped to bottom
+    if (clientSession.activeContact) {
+      const fp = clientSession.activeContact.fingerprint;
+      const historyKey = `history_${fp}`;
+      const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      const receivedMessages = history.filter(m => m.sender !== clientSession.identityKeyHash);
+      localStorage.setItem(`read_count_${fp}`, receivedMessages.length);
+      clientSession.unreadCounts[fp] = 0;
+      renderContactsList();
+    }
+  });
+});
+
+function updateScrollBottomBadge() {
+  if (!clientSession.activeContact) return;
+  const badge = document.getElementById('scroll-bottom-badge');
+  if (!badge) return;
+  const fp = clientSession.activeContact.fingerprint;
+  const unread = clientSession.unreadCounts[fp] || 0;
+  if (_userScrolledUp && unread > 0) {
+    badge.textContent = unread > 99 ? '99+' : String(unread);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+// ─── Message context menu (copy / delete) ──────────
+let _activeContextMenu = null;
+
+function closeMessageContextMenu() {
+  if (_activeContextMenu) {
+    _activeContextMenu.remove();
+    _activeContextMenu = null;
+  }
+  document.removeEventListener('click', closeMessageContextMenu);
+  document.removeEventListener('keydown', onContextMenuEscape);
+}
+
+function onContextMenuEscape(e) {
+  if (e.key === 'Escape') closeMessageContextMenu();
+}
+
+function openMessageContextMenu(msgEl, clientX, clientY) {
+  closeMessageContextMenu();
+  const menu = document.createElement('div');
+  menu.className = 'msg-context-menu';
+  const isImage = msgEl.dataset.msgIsImage === 'true';
+  const text = msgEl.dataset.msgText || '';
+  const timestamp = msgEl.dataset.msgTimestamp;
+  const sender = msgEl.dataset.msgSender;
+  const isSent = sender === clientSession.identityKeyHash;
+
+  const copySvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const delSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
+  let buttonsHtml = '';
+  if (!isImage && text) {
+    buttonsHtml += `<button data-action="copy">${copySvg}Copy text</button>`;
+  }
+  if (isSent) {
+    buttonsHtml += `<button data-action="delete" class="danger">${delSvg}Delete</button>`;
+  }
+  if (!buttonsHtml) return; // nothing to show
+
+  menu.innerHTML = buttonsHtml;
+  document.body.appendChild(menu);
+
+  // Position — keep within viewport
+  const rect = menu.getBoundingClientRect();
+  let x = clientX;
+  let y = clientY;
+  if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 8;
+  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 8;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  _activeContextMenu = menu;
+
+  menu.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (action === 'copy') {
+      copyToClipboard(text, 'Message copied to clipboard!');
+    } else if (action === 'delete') {
+      deleteMessage(timestamp, text);
+    }
+    closeMessageContextMenu();
+  });
+
+  // Close on outside click or Escape
+  setTimeout(() => {
+    document.addEventListener('click', closeMessageContextMenu);
+    document.addEventListener('keydown', onContextMenuEscape);
+  }, 0);
+}
+
+function deleteMessage(timestamp, text) {
+  if (!clientSession.activeContact) return;
+  const fp = clientSession.activeContact.fingerprint;
+  const historyKey = `history_${fp}`;
+  const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+  const filtered = history.filter(h => h.timestamp !== timestamp || h.text !== text);
+  localStorage.setItem(historyKey, JSON.stringify(filtered));
+  renderActiveChatMessages();
+  renderContactsList();
+  showToast('Message deleted.', 'info', 2000);
+}
+
+// Right-click context menu on messages
+document.addEventListener('contextmenu', (e) => {
+  const msgEl = e.target.closest('.message');
+  if (!msgEl || msgEl.classList.contains('typing-indicator')) return;
+  e.preventDefault();
+  openMessageContextMenu(msgEl, e.clientX, e.clientY);
+});
+
+// Long-press context menu for touch devices
+let _longPressTimer = null;
+let _longPressTarget = null;
+document.addEventListener('touchstart', (e) => {
+  const msgEl = e.target.closest('.message');
+  if (!msgEl || msgEl.classList.contains('typing-indicator')) return;
+  _longPressTarget = msgEl;
+  const touch = e.touches[0];
+  _longPressTimer = setTimeout(() => {
+    if (_longPressTarget) {
+      openMessageContextMenu(_longPressTarget, touch.clientX, touch.clientY);
+    }
+    _longPressTarget = null;
+  }, 500);
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  _longPressTarget = null;
+});
+document.addEventListener('touchmove', () => {
+  if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  _longPressTarget = null;
+}, { passive: true });
+
 
 /**
  * Smoothly fade out + remove a typing indicator capsule.
@@ -2508,7 +2720,12 @@ function toggleMobileSidebar() {
 }
 
 // ─── Themed Toast Notification (replaces native alert) ──────────
-const TOAST_ICONS = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+const TOAST_ICONS = {
+  success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+};
 
 function showToast(message, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
@@ -2573,7 +2790,9 @@ function showConfirm(message, options = {}) {
     // Sync the danger accent onto the card itself (neon bottom border)
     const cardEl = overlay.querySelector('.confirm-card');
     if (cardEl) cardEl.classList.toggle('danger', danger);
-    if (iconEl) iconEl.textContent = icon || (danger ? '🚨' : '⚠️');
+    if (iconEl) iconEl.innerHTML = icon || (danger
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>');
 
     overlay.classList.add('visible');
 
@@ -2673,7 +2892,7 @@ function showTypingAvatar(userId) {
 
   indicator.innerHTML = `
     <div class="typing-bubble">
-      <span style="font-size: 0.85rem; opacity: 0.7; margin-right: 8px;">🤖</span>
+      <span style="opacity: 0.7; margin-right: 8px; display:inline-flex;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span>
       <span class="typing-dots">
         <span></span><span></span><span></span>
       </span>
@@ -2838,9 +3057,121 @@ function handleImageUpload(file) {
     // Small images pass through untouched; large ones are resized to
     // max 1200x1200 and JPEG-compressed to keep payloads small.
     const processed = await compressImageIfNeeded(base64Data, 500000, 1200, 0.85);
-    await sendE2eeImage(processed);
+    // Show preview modal before sending
+    showImagePreviewModal(processed);
   };
   reader.readAsDataURL(file);
+}
+
+// ─── Image preview modal before send ───────────────
+let _imagePreviewClose = null;
+
+function showImagePreviewModal(dataUrl) {
+  // Remove any existing preview modal
+  const existing = document.getElementById('image-preview-modal');
+  if (existing) existing.remove();
+  if (_imagePreviewClose) { _imagePreviewClose(); _imagePreviewClose = null; }
+
+  const modal = document.createElement('div');
+  modal.id = 'image-preview-modal';
+  modal.className = 'image-preview-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Preview image before sending');
+  modal.innerHTML = `
+    <div class="image-preview-card">
+      <img src="${escapeHTML(dataUrl)}" alt="Image preview" />
+      <input type="text" id="image-preview-caption" placeholder="Add a caption (optional)..." maxlength="200" />
+      <div class="image-preview-actions">
+        <button type="button" class="image-preview-cancel" id="image-preview-cancel-btn">Cancel</button>
+        <button type="button" class="image-preview-send" id="image-preview-send-btn">Send Image</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const lastFocus = document.activeElement;
+  const sendBtn = modal.querySelector('#image-preview-send-btn');
+  const cancelBtn = modal.querySelector('#image-preview-cancel-btn');
+  const captionInput = modal.querySelector('#image-preview-caption');
+
+  // Focus the send button so keyboard users can act immediately
+  setTimeout(() => sendBtn.focus(), 50);
+
+  const close = () => {
+    modal.remove();
+    if (_imagePreviewClose) { _imagePreviewClose(); _imagePreviewClose = null; }
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+  };
+
+  // Focus trap
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Tab') {
+      const f = modal.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
+      if (f.length === 0) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
+  _imagePreviewClose = () => document.removeEventListener('keydown', onKeyDown);
+
+  // Backdrop click closes
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  cancelBtn.addEventListener('click', close);
+
+  sendBtn.addEventListener('click', async () => {
+    const caption = captionInput.value.trim();
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+    try {
+      if (caption) {
+        // Send caption as a separate text message first, then the image
+        await sendE2eeTextMessage(caption);
+      }
+      await sendE2eeImage(dataUrl);
+      close();
+    } catch (err) {
+      console.error('Image send failed:', err);
+      showToast('Failed to send image.', 'error', 4000);
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Image';
+    }
+  });
+
+  // Enter in caption field triggers send
+  captionInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+}
+
+// Helper: send a plain text message (used by image caption)
+async function sendE2eeTextMessage(plainText) {
+  if (!plainText || !clientSession.activeContact || !clientSession.activeSessionKey) return;
+  const recipientHash = clientSession.activeContact.fingerprint;
+  const encrypted = window.SecureCrypto.encrypt(plainText, clientSession.activeSessionKey);
+  const sentTimestamp = new Date().toISOString();
+  const result = await window.SecureSocket.sendMessage(
+    recipientHash, encrypted.ciphertext, encrypted.nonce,
+    clientSession.identityPublicKey, clientSession.identityPrivateKey
+  );
+  if (result.success) {
+    const initialStatus = result.status === 'sent' ? 'sent'
+      : (result.status === 'queued' ? 'sent' : 'delivered');
+    saveMessageToStorage(recipientHash, clientSession.identityKeyHash, plainText, sentTimestamp, false, initialStatus, result.message_id || null);
+    clientSession.pendingDelivery[recipientHash] = sentTimestamp;
+    renderActiveChatMessages();
+    renderContactsList();
+  }
 }
 
 /**
@@ -2977,7 +3308,7 @@ function handleCloseChat() {
     messagesBox.innerHTML = `
       <div id="drag-overlay" class="drag-overlay hidden">
         <div class="drag-overlay-content">
-          <span style="font-size: 3rem;">📷</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 3rem; height: 3rem; color: var(--primary);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <p style="margin-top: 8px; font-weight: 600;">Drop image here to encrypt & share</p>
         </div>
       </div>
@@ -3045,7 +3376,7 @@ async function handleRemoveContact(contact) {
       messagesBox.innerHTML = `
         <div id="drag-overlay" class="drag-overlay hidden">
           <div class="drag-overlay-content">
-            <span style="font-size: 3rem;">📷</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 3rem; height: 3rem; color: var(--primary);"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <p style="margin-top: 8px; font-weight: 600;">Drop image here to encrypt & share</p>
           </div>
         </div>
@@ -3123,10 +3454,10 @@ async function handlePanicShredder(silent = false) {
     const confirmed = await showConfirm(
       'Panic Shredder will permanently delete your account from the server, wipe all keys, contacts, and message history on this device, and request your contacts to erase their copies. This action cannot be undone.',
       {
-        title: '🚨 Panic Shredder',
+        title: 'Panic Shredder',
         confirmText: 'Shred Everything',
         danger: true,
-        icon: '🚨'
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
       }
     );
     if (!confirmed) {
@@ -3246,7 +3577,7 @@ async function handlePanicShredder(silent = false) {
     if (serverDeleted) {
       showToast('🔒 Account deleted from server and this device wiped. All data shredded.', 'success', 6000);
     } else {
-      showToast('⚠️ This device is wiped, but server account deletion may have failed. Try again or contact support.', 'warning', 8000);
+      showToast('This device is wiped, but server account deletion may have failed. Try again or contact support.', 'warning', 8000);
     }
   }
 }
