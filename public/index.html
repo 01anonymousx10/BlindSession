@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=3">
   <style>
     /* Styling overrides for premium, glassmorphism & matrix dark aesthetics */
     :root {
@@ -5369,9 +5369,9 @@
     window.dispatchEvent(new Event('sodium-ready'));
   </script>
   <!-- Client Wrapper Libraries (deferred until sodium is ready) -->
-  <script src="assets/js/crypto.js" defer></script>
-  <script src="assets/js/socket.js" defer></script>
-  <script src="assets/js/ui.js" defer></script>
+  <script src="assets/js/crypto.js?v=3" defer></script>
+  <script src="assets/js/socket.js?v=3" defer></script>
+  <script src="assets/js/ui.js?v=3" defer></script>
 
 
   <script>
@@ -5537,10 +5537,11 @@
   </div>
 
   <script>
-    // Register service worker for PWA installability + offline shell
+    // Service worker disabled during active development to prevent stale
+    // CSS/JS caching. Re-enable for production PWA support.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        registrations.forEach(function(registration) { registration.unregister(); });
       });
     }
   </script>

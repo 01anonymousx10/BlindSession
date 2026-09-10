@@ -27,7 +27,10 @@ export function buildApp(opts = {}) {
   // 2. Serve static files from /public folder
   fastify.register(staticFiles, {
     root: join(__dirname, '..', 'public'),
-    prefix: '/'
+    prefix: '/',
+    cacheControl: false,
+    etag: false,
+    lastModified: false
   });
 
   // 3. Register Native Fastify WebSocket Plugin
