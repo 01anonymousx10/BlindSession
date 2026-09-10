@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="assets/css/style.css?v=3">
+  <link rel="stylesheet" href="assets/css/style.css?v=4">
   <style>
     /* Styling overrides for premium, glassmorphism & matrix dark aesthetics */
     :root {
@@ -2330,7 +2330,7 @@
       border: 1px solid rgba(0, 255, 157, 0.15);
       border-radius: 20px;
       padding: 1.75rem 1.75rem 1.5rem;
-      max-width: 480px;
+      max-width: 580px;
       width: 100%;
       max-height: calc(100vh - 3rem);
       overflow-y: auto;
@@ -2421,8 +2421,8 @@
 
     .welcome-tagline {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
       justify-content: center;
       margin-bottom: 1.25rem;
     }
@@ -2436,9 +2436,9 @@
       color: var(--primary);
       background: rgba(0, 255, 157, 0.06);
       border: 1px solid rgba(0, 255, 157, 0.2);
-      padding: 0.25rem 0.6rem;
+      padding: 0.2rem 0.5rem;
       border-radius: 100px;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
       white-space: nowrap;
     }
 
@@ -2575,6 +2575,11 @@
 
       .welcome-card h2 {
         font-size: var(--fs-lg);
+      }
+
+      /* Allow tags to wrap on very narrow screens */
+      .welcome-tagline {
+        flex-wrap: wrap;
       }
     }
 
@@ -5369,9 +5374,9 @@
     window.dispatchEvent(new Event('sodium-ready'));
   </script>
   <!-- Client Wrapper Libraries (deferred until sodium is ready) -->
-  <script src="assets/js/crypto.js?v=3" defer></script>
-  <script src="assets/js/socket.js?v=3" defer></script>
-  <script src="assets/js/ui.js?v=3" defer></script>
+  <script src="assets/js/crypto.js?v=4" defer></script>
+  <script src="assets/js/socket.js?v=4" defer></script>
+  <script src="assets/js/ui.js?v=4" defer></script>
 
 
   <script>
