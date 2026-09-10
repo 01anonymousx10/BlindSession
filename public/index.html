@@ -63,6 +63,13 @@
       --color-warning-text: #ffb347;
     }
 
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background: var(--bg-gradient);
       color: var(--text-primary);
@@ -71,6 +78,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      overflow-x: hidden;
     }
 
     /* Landing Split Layout */
@@ -1077,6 +1085,7 @@
     .chat-container {
       display: grid;
       grid-template-columns: 350px 1fr;
+      width: 100%;
       height: 100dvh;
       max-height: 100dvh;
       overflow: hidden;
@@ -1089,6 +1098,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-width: 0;
     }
 
     .chat-area {
@@ -1097,6 +1107,7 @@
       background: #0a0b10;
       overflow: hidden;
       position: relative;
+      min-width: 0;
     }
 
     .chat-header {
@@ -1106,6 +1117,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-width: 0;
     }
 
     .sidebar-header {
@@ -3871,6 +3885,8 @@
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(6px);
+      flex-wrap: wrap;
+      min-width: 0;
     }
 
     .action-bar-btn {
