@@ -3975,54 +3975,6 @@ function performChatSearch(query) {
   if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ─── Sidebar resize handle (desktop) ──────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const handle = document.getElementById('sidebar-resize-handle');
-  const container = document.getElementById('chat-screen');
-  if (!handle || !container) return;
-
-  // Restore saved width
-  const savedWidth = localStorage.getItem('sidebar-width');
-  if (savedWidth) {
-    container.style.setProperty('--sidebar-width', savedWidth + 'px');
-  }
-
-  let isDragging = false;
-  let startX = 0;
-  let startWidth = 0;
-
-  handle.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    startX = e.clientX;
-    const computed = getComputedStyle(container).getPropertyValue('--sidebar-width');
-    startWidth = parseInt(computed) || 350;
-    handle.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    const delta = e.clientX - startX;
-    let newWidth = startWidth + delta;
-    // Clamp: 250px min, 600px max
-    newWidth = Math.max(250, Math.min(600, newWidth));
-    container.style.setProperty('--sidebar-width', newWidth + 'px');
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!isDragging) return;
-    isDragging = false;
-    handle.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    // Persist width
-    const current = container.style.getPropertyValue('--sidebar-width');
-    if (current) localStorage.setItem('sidebar-width', parseInt(current));
-  });
-});
-
 // ─── Global Keyboard Shortcuts ─────────────────────
 document.addEventListener('keydown', (e) => {
   // Ignore shortcuts when typing in an input/textarea (except Escape)

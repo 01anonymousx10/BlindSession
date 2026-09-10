@@ -130,24 +130,16 @@ body {
   box-shadow: 0 4px 16px rgba(0, 255, 157, 0.35);
 }
 
-/* Main Dashboard — sidebar width matches inline (350px) */
+/* Main Dashboard — collapsible sidebar (narrow rail by default, expands on hover) */
 .chat-container {
   display: grid;
-  grid-template-columns: var(--sidebar-width, 350px) 6px 1fr;
+  grid-template-columns: var(--sidebar-width, 72px) 1fr;
   height: 100dvh;
+  transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.sidebar-resize-handle {
-  cursor: col-resize;
-  background: transparent;
-  position: relative;
-  z-index: 10;
-  transition: background 0.2s ease;
-}
-
-.sidebar-resize-handle:hover,
-.sidebar-resize-handle.dragging {
-  background: rgba(0, 255, 157, 0.2);
+.chat-container:hover {
+  grid-template-columns: var(--sidebar-expanded, 350px) 1fr;
 }
 
 .sidebar {
@@ -541,10 +533,6 @@ body {
 @media (max-width: 900px) {
   .chat-container {
     grid-template-columns: 1fr;
-  }
-
-  .sidebar-resize-handle {
-    display: none;
   }
 
   /* Sidebar is now an off-canvas drawer controlled by .sidebar.open
