@@ -611,6 +611,10 @@ async function handleGenerateIdentity() {
     const rcDisplay = document.getElementById('recovery-code-display');
     if (rcDisplay) rcDisplay.textContent = recoveryPhrase;
 
+    // Store plain recovery code temporarily for backup export.
+    // Removed from localStorage after first backup download or session end.
+    localStorage.setItem('recovery_code_plain', recoveryPhrase);
+
     // Zero-knowledge server sync: store recovery ciphertext in database
     const recoveryBlobStr = localStorage.getItem('encrypted_recovery_code');
     if (recoveryBlobStr) {
@@ -655,6 +659,7 @@ function clearAllAccountData() {
     const key = localStorage.key(i);
     if (key === 'contacts' ||
         key === 'encrypted_recovery_code' ||
+        key === 'recovery_code_plain' ||
         key === 'my_display_name' ||
         key.startsWith('history_') ||
         key.startsWith('read_count_') ||
@@ -3733,6 +3738,7 @@ async function handlePanicShredder(silent = false) {
     const key = localStorage.key(i);
     if (key === 'encrypted_identity' ||
         key === 'encrypted_recovery_code' ||
+        key === 'recovery_code_plain' ||
         key === 'my_display_name' ||
         key === 'duress_passphrase' ||
         key === 'contacts' ||
@@ -4321,16 +4327,42 @@ function copyRecoveryCode() {
  */
 function toggleRecoveryView() {
   const panel = document.getElementById('recovery-panel');
-  if (panel) {
-    panel.classList.toggle('hidden');
+  if (!panel) return;
+
+  const isHidden = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+
+  // Only run detection when opening the panel
+  if (!isHidden) return;
+
+  // Auto-detect: if encrypted_recovery_code is in localStorage, we're on the
+  // same device (or a backup was just imported). Hide the fingerprint field.
+  // If not, show it so the user can fetch the recovery blob from the server.
+  const hasLocalRecovery = !!localStorage.getItem('encrypted_recovery_code');
+  const fpGroup = document.getElementById('recovery-fp-group');
+
+  if (fpGroup) {
+    if (hasLocalRecovery) {
+      fpGroup.classList.add('hidden');
+    } else {
+      fpGroup.classList.remove('hidden');
+    }
+  }
+
+  // If a plain recovery code was pre-filled from a backup import, show a hint
+  const rcInput = document.getElementById('recovery-code-input');
+  if (rcInput && rcInput.value.trim()) {
+    const hintEl = document.getElementById('recovery-code-hint');
+    if (hintEl) hintEl.classList.remove('hidden');
   }
 }
 
 /**
  * Exports an encrypted identity backup JSON file for cross-device portability.
  * The file contains: the encrypted identity blob, encrypted recovery code blob,
- * contacts list, and display name. All private keys remain encrypted — the
- * backup file is USELESS without the user's passphrase.
+ * plain-text recovery code, contacts list, and display name.
+ * Private keys remain encrypted — the backup file is useless without the
+ * user's passphrase OR recovery code.
  */
 function handleExportBackup() {
   const encrypted = localStorage.getItem('encrypted_identity');
@@ -4340,13 +4372,16 @@ function handleExportBackup() {
     return;
   }
 
+  const recoveryCodePlain = localStorage.getItem('recovery_code_plain') || null;
+
   const backup = {
-    version: 2,
+    version: 3,
     created_at: new Date().toISOString(),
     fingerprint: clientSession.identityKeyHash || 'unknown',
     display_name: clientSession.displayName || null,
     encrypted_identity: JSON.parse(encrypted),
     encrypted_recovery_code: encryptedRecovery ? JSON.parse(encryptedRecovery) : null,
+    recovery_code_plain: recoveryCodePlain,
     contacts: JSON.parse(localStorage.getItem('contacts') || '[]')
   };
 
@@ -4361,13 +4396,14 @@ function handleExportBackup() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  showToast('Backup downloaded! Keep this file safe.', 'success', 5000);
+  showToast('Backup downloaded! Keep this file safe — it contains your recovery code.', 'success', 5000);
 }
 
 /**
  * Imports an identity from a backup JSON file.
  * Restores encrypted_identity, encrypted_recovery_code, contacts, and display name
- * to localStorage, then prompts the user to unlock with their passphrase.
+ * to localStorage, then shows a clear choice: unlock with passphrase or use
+ * recovery code if the backup includes one.
  */
 function handleImportBackup(event) {
   const file = event.target.files[0];
@@ -4398,14 +4434,38 @@ function handleImportBackup(event) {
         localStorage.setItem('my_display_name', backup.display_name);
       }
 
-      // Switch the user to the Login tab so they can unlock with their passphrase
+      // Store plain recovery code if present in backup (v3+)
+      if (backup.recovery_code_plain) {
+        localStorage.setItem('recovery_code_plain', backup.recovery_code_plain);
+      }
+
+      const fp = backup.fingerprint || 'unknown';
+      const fpShort = fp.substring(0, 16);
+
+      // Switch to Login tab
       document.getElementById('register-tab-btn').classList.remove('active');
       document.getElementById('login-tab-btn').classList.add('active');
       document.getElementById('register-tab').classList.add('hidden');
       document.getElementById('login-tab').classList.remove('hidden');
 
-      const fp = backup.fingerprint || 'unknown';
-      showToast(`Backup imported! Fingerprint: ${fp.substring(0, 16)}… — now enter your passphrase to unlock.`, 'success', 7000);
+      // Pre-fill recovery code into the recovery panel if available
+      if (backup.recovery_code_plain) {
+        const rcInput = document.getElementById('recovery-code-input');
+        if (rcInput) rcInput.value = backup.recovery_code_plain;
+      }
+
+      // Show fingerprint in the recovery fingerprint field if present
+      if (backup.fingerprint) {
+        const fpInput = document.getElementById('recovery-fingerprint-input');
+        if (fpInput) fpInput.value = backup.fingerprint;
+      }
+
+      // Show guidance toast
+      if (backup.recovery_code_plain) {
+        showToast(`Backup imported — Fingerprint: ${fpShort}… Enter your passphrase to unlock, or use "Forgot Passphrase" below if you forgot it.`, 'success', 8000);
+      } else {
+        showToast(`Backup imported — Fingerprint: ${fpShort}… Enter your passphrase to unlock.`, 'success', 6000);
+      }
 
     } catch (err) {
       showToast('Failed to read backup file: ' + err.message, 'error');

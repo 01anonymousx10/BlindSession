@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="assets/css/style.css?v=4">
+  <link rel="stylesheet" href="assets/css/style.css?v=5">
   <style>
     /* Styling overrides for premium, glassmorphism & matrix dark aesthetics */
     :root {
@@ -4885,9 +4885,13 @@
             style="margin-top:1.25rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,165,0,0.3); border-radius:6px; padding:1rem;">
             <p style="font-size:var(--fs-sm); color:var(--color-warning-text); font-weight:var(--fw-semibold); margin:0 0 0.5rem; display:flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg> Passphrase Recovery</p>
             <p style="font-size:0.72rem; color:var(--text-secondary); margin:0 0 0.75rem; line-height:1.4;">
-              Enter your 12-word Master Recovery Code to set a new passphrase.
+              Enter your 12-word Master Recovery Code to set a new passphrase. Your recovery code was shown when you first created your identity, and is included in your backup file.
             </p>
-            <div id="recovery-fp-group" style="margin-bottom:0.75rem;">
+            <p id="recovery-code-hint" class="hidden"
+              style="font-size:0.72rem; color:var(--primary); margin:0 0 0.75rem; line-height:1.4; background:rgba(0,255,157,0.06); border:1px solid rgba(0,255,157,0.15); border-radius:4px; padding:0.5rem;">
+              Recovery code from your backup file has been pre-filled. Just enter a new passphrase below.
+            </p>
+            <div id="recovery-fp-group" class="hidden" style="margin-bottom:0.75rem;">
               <input type="text" id="recovery-fingerprint-input" class="auth-input"
                 placeholder="Identity Fingerprint (if recovering on a new device)"
                 style="margin-bottom:0; font-size:0.75rem;">
@@ -5374,9 +5378,9 @@
     window.dispatchEvent(new Event('sodium-ready'));
   </script>
   <!-- Client Wrapper Libraries (deferred until sodium is ready) -->
-  <script src="assets/js/crypto.js?v=4" defer></script>
-  <script src="assets/js/socket.js?v=4" defer></script>
-  <script src="assets/js/ui.js?v=4" defer></script>
+  <script src="assets/js/crypto.js?v=5" defer></script>
+  <script src="assets/js/socket.js?v=5" defer></script>
+  <script src="assets/js/ui.js?v=5" defer></script>
 
 
   <script>
