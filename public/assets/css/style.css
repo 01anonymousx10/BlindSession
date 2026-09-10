@@ -133,8 +133,21 @@ body {
 /* Main Dashboard — sidebar width matches inline (350px) */
 .chat-container {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: var(--sidebar-width, 350px) 6px 1fr;
   height: 100dvh;
+}
+
+.sidebar-resize-handle {
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle.dragging {
+  background: rgba(0, 255, 157, 0.2);
 }
 
 .sidebar {
@@ -528,6 +541,10 @@ body {
 @media (max-width: 900px) {
   .chat-container {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar-resize-handle {
+    display: none;
   }
 
   /* Sidebar is now an off-canvas drawer controlled by .sidebar.open

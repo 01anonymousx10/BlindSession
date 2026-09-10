@@ -44,6 +44,12 @@ let screenTransitioning = false;
 // runs, then restores it in finally. Usage:
 //   const done = setButtonLoading(btn, 'Generating…');
 //   try { ... } finally { done(); }
+// ─── Haptic feedback (mobile) ──────────────────────
+// Triggers a short vibration on supported devices. No-op on desktop.
+function haptic(ms = 10) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
 function setButtonLoading(btn, loadingText) {
   if (!btn) return () => {};
   const originalText = btn.innerHTML;
@@ -537,6 +543,8 @@ async function handleGenerateIdentity() {
 
   const btn = document.querySelector('button[onclick="handleGenerateIdentity()"]');
   const restoreBtn = setButtonLoading(btn, 'Generating…');
+  const authWrapper = document.querySelector('.auth-wrapper');
+  if (authWrapper) authWrapper.setAttribute('aria-busy', 'true');
   try {
     const identityKeys = window.SecureCrypto.generateIdentityKeyPair();
     const preKeys = window.SecureCrypto.generatePreKeyPair();
@@ -630,6 +638,7 @@ async function handleGenerateIdentity() {
     showToast(`Failed to generate identity: ${err.message}`, 'error', 6000);
   } finally {
     restoreBtn();
+    if (authWrapper) authWrapper.removeAttribute('aria-busy');
   }
 }
 
@@ -722,6 +731,8 @@ function handleUnlockIdentity() {
 
   const btn = document.querySelector('button[onclick="handleUnlockIdentity()"]');
   const restoreBtn = setButtonLoading(btn, 'Unlocking…');
+  const authWrapper = document.querySelector('.auth-wrapper');
+  if (authWrapper) authWrapper.setAttribute('aria-busy', 'true');
   try {
     const blob = JSON.parse(storedData);
     const sodium = window.sodium;
@@ -778,6 +789,7 @@ function handleUnlockIdentity() {
     errorEl.classList.remove('hidden');
   } finally {
     restoreBtn();
+    if (authWrapper) authWrapper.removeAttribute('aria-busy');
   }
 }
 
@@ -1096,8 +1108,12 @@ function renderContactsList() {
     item.className = 'contact-item';
     item.dataset.fingerprint = contact.fingerprint;
     item.dataset.name = contact.displayName || window.SecureCrypto.hashToName(contact.fingerprint);
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', `Open chat with ${item.dataset.name}`);
     if (clientSession.activeContact && clientSession.activeContact.fingerprint === contact.fingerprint) {
       item.classList.add('active');
+      item.setAttribute('aria-current', 'true');
     }
     if (contact.shredded) {
       item.classList.add('shredded');
@@ -1156,6 +1172,12 @@ function renderContactsList() {
     `;
 
     item.onclick = () => handleSelectContact(contact);
+    item.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSelectContact(contact);
+      }
+    };
 
     // ⋯ menu wiring (stop propagation so it doesn't also select the contact)
     const menuBtn = item.querySelector('.contact-menu-btn');
@@ -1224,6 +1246,7 @@ function updateUnreadBadge() {
  * 4. Contact Selection & Key Agreement Handshake
  */
 async function handleSelectContact(contact) {
+  haptic(10);
   // Hide welcome overlay on contact selection
   const welcomeOverlay = document.getElementById('welcome-overlay');
   if (welcomeOverlay) {
@@ -1298,6 +1321,7 @@ async function handleSelectContact(contact) {
 
   const messagesBox = document.getElementById('chat-messages');
   messagesBox.innerHTML = getLoadingStateHTML();
+  messagesBox.setAttribute('aria-busy', 'true');
 
   try {
     let bundle;
@@ -1712,6 +1736,7 @@ async function handleSendE2eeMessage() {
     return;
   }
 
+  haptic(10);
   const sendBtn = document.getElementById('send-msg-btn');
   const restoreBtn = setButtonLoading(sendBtn, 'Sending…');
 
@@ -2000,6 +2025,7 @@ function renderActiveChatMessages() {
 
   const messagesBox = document.getElementById('chat-messages');
   messagesBox.innerHTML = '';
+  messagesBox.removeAttribute('aria-busy');
 
   const fp = clientSession.activeContact.fingerprint;
   const historyKey = `history_${fp}`;
@@ -2038,6 +2064,12 @@ function renderActiveChatMessages() {
     return;
   }
 
+  // Unread divider: find the index of the first unread received message
+  const readKey = `read_count_${fp}`;
+  const readCount = parseInt(localStorage.getItem(readKey) || '0', 10);
+  let receivedMsgIndex = 0;
+  let unreadDividerInserted = false;
+
   validHistory.forEach((msg, index) => {
     if (msg.sender === 'system') {
       const systemEl = document.createElement('div');
@@ -2046,6 +2078,20 @@ function renderActiveChatMessages() {
       systemEl.textContent = msg.text;
       messagesBox.appendChild(systemEl);
       return;
+    }
+
+    // Track received message index for unread divider
+    const isReceived = msg.sender !== clientSession.identityKeyHash;
+    if (isReceived) {
+      if (receivedMsgIndex === readCount && !unreadDividerInserted && readCount > 0) {
+        // Insert "Unread messages" divider before the first unread message
+        const divider = document.createElement('div');
+        divider.className = 'unread-divider';
+        divider.innerHTML = '<span class="unread-divider-text">Unread messages</span>';
+        messagesBox.appendChild(divider);
+        unreadDividerInserted = true;
+      }
+      receivedMsgIndex++;
     }
 
     // ── Date separator ─────────────────────────────────
@@ -2074,6 +2120,8 @@ function renderActiveChatMessages() {
     const isSent = msg.sender === clientSession.identityKeyHash;
     const msgEl = document.createElement('div');
     msgEl.className = `message ${isSent ? 'sent' : 'received'}`;
+    msgEl.setAttribute('tabindex', '0');
+    msgEl.setAttribute('role', 'article');
 
     // Store message data for context menu (copy / delete)
     msgEl.dataset.msgText = msg.isImage ? '' : (msg.text || '');
@@ -2311,10 +2359,14 @@ function openMessageContextMenu(msgEl, clientX, clientY) {
 
   const copySvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const delSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  const forwardSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>';
 
   let buttonsHtml = '';
   if (!isImage && text) {
     buttonsHtml += `<button data-action="copy">${copySvg}Copy text</button>`;
+  }
+  if (!isImage && text && clientSession.contacts.length > 1) {
+    buttonsHtml += `<button data-action="forward">${forwardSvg}Forward</button>`;
   }
   if (isSent) {
     buttonsHtml += `<button data-action="delete" class="danger">${delSvg}Delete</button>`;
@@ -2343,6 +2395,8 @@ function openMessageContextMenu(msgEl, clientX, clientY) {
       copyToClipboard(text, 'Message copied to clipboard!');
     } else if (action === 'delete') {
       deleteMessage(timestamp, text);
+    } else if (action === 'forward') {
+      showForwardDialog(text);
     }
     closeMessageContextMenu();
   });
@@ -2364,6 +2418,126 @@ function deleteMessage(timestamp, text) {
   renderActiveChatMessages();
   renderContactsList();
   showToast('Message deleted.', 'info', 2000);
+}
+
+// ─── Forward message to another contact ───────────
+let _forwardClose = null;
+
+function showForwardDialog(text) {
+  const existing = document.getElementById('forward-modal');
+  if (existing) existing.remove();
+  if (_forwardClose) { _forwardClose(); _forwardClose = null; }
+
+  const modal = document.createElement('div');
+  modal.id = 'forward-modal';
+  modal.className = 'image-preview-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Forward message');
+
+  const contactsHtml = clientSession.contacts
+    .filter(c => c.fingerprint !== clientSession.activeContact?.fingerprint)
+    .map(c => {
+      const name = c.displayName || window.SecureCrypto.hashToName(c.fingerprint);
+      const shortFp = c.fingerprint.substring(0, 12) + '...';
+      return `<button data-fp="${c.fingerprint}" class="forward-contact-btn">${escapeHTML(name)} <span style="color:var(--text-tertiary);font-size:var(--fs-xs);">${shortFp}</span></button>`;
+    }).join('');
+
+  modal.innerHTML = `
+    <div class="image-preview-card" style="max-width:380px;">
+      <h3 style="margin:0 0 0.75rem;font-size:var(--fs-lg);font-weight:var(--fw-semibold);">Forward to...</h3>
+      <div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:1rem;">
+        ${contactsHtml || '<p style="color:var(--text-secondary);font-size:var(--fs-sm);">No other contacts available.</p>'}
+      </div>
+      <div class="image-preview-actions">
+        <button type="button" class="image-preview-cancel" id="forward-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const lastFocus = document.activeElement;
+  setTimeout(() => {
+    const firstBtn = modal.querySelector('.forward-contact-btn');
+    if (firstBtn) firstBtn.focus();
+    else modal.querySelector('#forward-cancel')?.focus();
+  }, 50);
+
+  const close = () => {
+    modal.remove();
+    if (_forwardClose) { _forwardClose(); _forwardClose = null; }
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Tab') {
+      const f = modal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])');
+      if (f.length === 0) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
+  _forwardClose = () => document.removeEventListener('keydown', onKeyDown);
+
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  modal.querySelector('#forward-cancel').addEventListener('click', close);
+
+  modal.querySelectorAll('.forward-contact-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const fp = btn.dataset.fp;
+      btn.disabled = true;
+      btn.textContent = 'Forwarding...';
+      try {
+        await forwardMessageTo(fp, text);
+        close();
+        showToast('Message forwarded.', 'success', 2000);
+      } catch (err) {
+        console.error('Forward failed:', err);
+        showToast('Failed to forward message.', 'error', 4000);
+        btn.disabled = false;
+        btn.textContent = 'Retry';
+      }
+    });
+  });
+}
+
+async function forwardMessageTo(recipientFp, text) {
+  // Temporarily switch active contact to derive session key, then send
+  const originalContact = clientSession.activeContact;
+  const originalKey = clientSession.activeSessionKey;
+  const contact = clientSession.contacts.find(c => c.fingerprint === recipientFp);
+  if (!contact) throw new Error('Contact not found');
+
+  // Fetch their prekey bundle and derive session key
+  const res = await fetch(`${window.location.origin}/api/users/${recipientFp}`);
+  if (!res.ok) throw new Error('Failed to resolve contact keys');
+  const bundle = await res.json();
+  const sessionKey = await window.SecureCrypto.deriveSessionKey(
+    bundle.public_identity_key, bundle.public_prekey, bundle.prekey_signature,
+    clientSession.identityPrivateKey
+  );
+
+  const encrypted = window.SecureCrypto.encrypt(text, sessionKey);
+  const sentTimestamp = new Date().toISOString();
+  const result = await window.SecureSocket.sendMessage(
+    recipientFp, encrypted.ciphertext, encrypted.nonce,
+    clientSession.identityPublicKey, clientSession.identityPrivateKey
+  );
+
+  if (result.success) {
+    const status = result.status === 'sent' ? 'sent'
+      : (result.status === 'queued' ? 'sent' : 'delivered');
+    saveMessageToStorage(recipientFp, clientSession.identityKeyHash, text, sentTimestamp, false, status, result.message_id || null);
+    clientSession.pendingDelivery[recipientFp] = sentTimestamp;
+    renderContactsList();
+  } else {
+    throw new Error(result.error || 'Send failed');
+  }
 }
 
 // Right-click context menu on messages
@@ -2875,23 +3049,22 @@ function updateConnectionStatus(status) {
   const halo = document.getElementById('connection-halo');
   const label = document.getElementById('connection-label');
 
-  // Reset halo classes
-  if (halo) {
-    halo.className = 'connection-halo';
-  }
+  // Reset classes
+  if (halo) halo.className = 'connection-halo';
+  if (label) label.className = 'connection-label';
 
   if (status === 'connected') {
     if (halo) halo.classList.add('connected');
-    if (label) { label.textContent = 'Connected'; label.style.color = 'var(--primary)'; }
+    if (label) { label.textContent = 'Connected'; label.classList.add('connected'); }
   } else if (status === 'connecting' || status === 'authenticating') {
     if (halo) halo.classList.add('connecting');
-    if (label) { label.textContent = 'Connecting...'; label.style.color = 'var(--color-info)'; }
+    if (label) { label.textContent = 'Connecting...'; label.classList.add('connecting'); }
   } else if (status === 'offline-mode') {
     if (halo) halo.classList.add('rest-mode');
-    if (label) { label.textContent = 'REST Mode'; label.style.color = 'var(--color-warning)'; }
+    if (label) { label.textContent = 'REST Mode'; label.classList.add('rest-mode'); }
   } else {
     if (halo) halo.classList.add('offline');
-    if (label) { label.textContent = 'Offline'; label.style.color = 'var(--color-error)'; }
+    if (label) { label.textContent = 'Offline'; label.classList.add('offline'); }
   }
 }
 
@@ -3681,6 +3854,174 @@ function filterContacts(query) {
     emptyMsg.style.display = 'none';
   }
 }
+
+// ─── About / Help modal ────────────────────────────
+let _aboutClose = null;
+
+function showAboutModal() {
+  const modal = document.getElementById('about-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  const lastFocus = document.activeElement;
+  const closeBtn = modal.querySelector('.image-preview-cancel');
+  setTimeout(() => closeBtn?.focus(), 50);
+
+  const close = () => {
+    modal.classList.add('hidden');
+    if (_aboutClose) { _aboutClose(); _aboutClose = null; }
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Tab') {
+      const f = modal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])');
+      if (f.length === 0) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
+  _aboutClose = () => document.removeEventListener('keydown', onKeyDown);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  closeBtn.onclick = close;
+}
+
+function closeAboutModal() {
+  const modal = document.getElementById('about-modal');
+  if (modal) modal.classList.add('hidden');
+  if (_aboutClose) { _aboutClose(); _aboutClose = null; }
+}
+
+// ─── In-chat message search ────────────────────────
+function toggleChatSearch() {
+  const bar = document.getElementById('chat-search-bar');
+  if (!bar) return;
+  bar.classList.toggle('hidden');
+  if (!bar.classList.contains('hidden')) {
+    const input = document.getElementById('chat-search-input');
+    if (input) input.focus();
+  } else {
+    clearChatSearch();
+  }
+}
+
+function closeChatSearch() {
+  const bar = document.getElementById('chat-search-bar');
+  if (bar) bar.classList.add('hidden');
+  clearChatSearch();
+}
+
+function clearChatSearch() {
+  const messagesBox = document.getElementById('chat-messages');
+  if (messagesBox) {
+    messagesBox.querySelectorAll('.message.search-match').forEach(el => el.classList.remove('search-match'));
+    messagesBox.querySelectorAll('.message.search-hidden').forEach(el => el.classList.remove('search-hidden'));
+  }
+  const count = document.getElementById('chat-search-count');
+  if (count) count.textContent = '';
+  const input = document.getElementById('chat-search-input');
+  if (input) input.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('chat-search-input');
+  if (!searchInput) return;
+  let searchTimer = null;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => performChatSearch(e.target.value), 200);
+  });
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closeChatSearch(); }
+  });
+});
+
+function performChatSearch(query) {
+  const messagesBox = document.getElementById('chat-messages');
+  if (!messagesBox) return;
+  const countEl = document.getElementById('chat-search-count');
+  const normalized = query.toLowerCase().trim();
+
+  messagesBox.querySelectorAll('.message.search-match').forEach(el => el.classList.remove('search-match'));
+  messagesBox.querySelectorAll('.message.search-hidden').forEach(el => el.classList.remove('search-hidden'));
+
+  if (!normalized) {
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+
+  const messages = messagesBox.querySelectorAll('.message');
+  let matchCount = 0;
+  messages.forEach(msg => {
+    if (msg.classList.contains('typing-indicator')) return;
+    const text = (msg.textContent || '').toLowerCase();
+    if (text.includes(normalized)) {
+      msg.classList.add('search-match');
+      matchCount++;
+    } else {
+      msg.classList.add('search-hidden');
+    }
+  });
+
+  if (countEl) {
+    countEl.textContent = matchCount > 0 ? `${matchCount} match${matchCount > 1 ? 'es' : ''}` : 'No results';
+  }
+
+  const firstMatch = messagesBox.querySelector('.message.search-match');
+  if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ─── Sidebar resize handle (desktop) ──────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const handle = document.getElementById('sidebar-resize-handle');
+  const container = document.getElementById('chat-screen');
+  if (!handle || !container) return;
+
+  // Restore saved width
+  const savedWidth = localStorage.getItem('sidebar-width');
+  if (savedWidth) {
+    container.style.setProperty('--sidebar-width', savedWidth + 'px');
+  }
+
+  let isDragging = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    const computed = getComputedStyle(container).getPropertyValue('--sidebar-width');
+    startWidth = parseInt(computed) || 350;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const delta = e.clientX - startX;
+    let newWidth = startWidth + delta;
+    // Clamp: 250px min, 600px max
+    newWidth = Math.max(250, Math.min(600, newWidth));
+    container.style.setProperty('--sidebar-width', newWidth + 'px');
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    // Persist width
+    const current = container.style.getPropertyValue('--sidebar-width');
+    if (current) localStorage.setItem('sidebar-width', parseInt(current));
+  });
+});
 
 // ─── Global Keyboard Shortcuts ─────────────────────
 document.addEventListener('keydown', (e) => {
