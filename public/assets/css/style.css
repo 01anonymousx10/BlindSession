@@ -525,7 +525,7 @@ body {
   50%      { transform: scale(1.06); }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .chat-container {
     grid-template-columns: 1fr;
   }

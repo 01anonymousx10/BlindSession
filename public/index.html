@@ -700,8 +700,81 @@
       opacity: 1;
     }
 
-    /* Mobile breakpoint for the chat screen */
-    @media (max-width: 768px) {
+    /* Compact sidebar rail for medium screens (900px–1024px).
+       Shows avatars + names only, like Snapchat web's narrow contact bar.
+       Full fingerprint, search, add-contact, and action buttons are hidden
+       to save space; they remain available in the mobile drawer (<900px)
+       and on desktop (>1024px). */
+    @media (max-width: 1024px) and (min-width: 901px) {
+      .chat-container {
+        grid-template-columns: 260px 1fr;
+      }
+
+      /* Compact the user profile card — show avatar + name only */
+      .user-profile-card {
+        padding: 0.75rem 0.9rem;
+        gap: 8px;
+      }
+
+      .user-profile-card .profile-info {
+        min-width: 0;
+      }
+
+      .user-profile-card .profile-fingerprint {
+        display: none;
+      }
+
+      .user-profile-card .profile-action-btn,
+      .user-profile-card .profile-copy-btn {
+        padding: 4px 8px;
+        font-size: 0.72rem;
+      }
+
+      /* Hide the add-contact row and search — not enough room in compact mode */
+      .add-contact-row,
+      .contact-search-wrapper {
+        display: none;
+      }
+
+      /* Compact contacts: smaller padding, hide the preview line */
+      .contact-item {
+        padding: 0.7rem 0.85rem;
+      }
+
+      .contact-bottom-row {
+        display: none;
+      }
+
+      .contact-avatar {
+        width: 38px;
+        height: 38px;
+      }
+
+      .contact-menu-btn {
+        display: none;
+      }
+
+      /* Compact sidebar action buttons — icon only */
+      .sidebar-actions {
+        flex-direction: row;
+        justify-content: center;
+        gap: 6px;
+        padding: 0.6rem 0.5rem;
+      }
+
+      .sidebar-actions button {
+        padding: 6px;
+        min-width: 36px;
+      }
+
+      .sidebar-actions button span {
+        display: none;
+      }
+    }
+
+    /* Mobile breakpoint for the chat screen — drawer kicks in at 900px
+       so the chat gets full width on tablets and narrow laptops. */
+    @media (max-width: 900px) {
       .chat-container {
         grid-template-columns: 1fr;
       }
@@ -734,6 +807,44 @@
 
       .chat-header {
         padding: 0.85rem 1rem;
+        flex-wrap: wrap;
+      }
+
+      /* On mobile, stack the action bar below the contact info so the
+         fingerprint line has room and buttons don't overlap. */
+      .chat-header-left {
+        flex: 1 1 60%;
+        min-width: 0;
+      }
+
+      .chat-action-bar {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+      }
+
+      /* Hide the full fingerprint on mobile — show only the presence tag.
+         The full fingerprint is available via the drawer's contact list
+         and the verify-session modal. */
+      #chat-recipient-subtitle .chat-hash-text {
+        display: none;
+      }
+
+      /* Widen message bubbles on narrow screens so the chat doesn't
+         look half-empty. 65% → 85% gives bubbles more room while still
+         keeping left/right alignment readable. */
+      .message {
+        max-width: 85%;
+      }
+
+      /* Reduce chat-messages padding on mobile to maximize usable space */
+      .chat-messages {
+        padding: 1rem;
+      }
+
+      /* Input bar: tighter padding on mobile */
+      .message-input-area {
+        padding: 0.85rem 1rem;
+        gap: 0.5rem;
       }
     }
 
@@ -3590,6 +3701,23 @@
       font-size: 0.72rem;
       color: var(--text-secondary);
       margin: 0.15rem 0 0;
+      /* Truncate the fingerprint line so it never overlaps the presence tag
+         or wraps awkwardly on narrow screens. The full fingerprint is
+         available via the title tooltip + click-to-copy. */
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #chat-recipient-subtitle .chat-hash-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
     }
 
     /* Presence/status as compact glass tags */
