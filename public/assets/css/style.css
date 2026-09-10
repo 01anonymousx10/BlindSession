@@ -2,22 +2,30 @@
 /* Modern Cyber-Security Dark UI Theme */
 
 :root {
-  /* Core palette */
-  --primary: #29F19C; /* Neon mint */
+  /* Core palette — kept in sync with the inline <style> block in index.html.
+     The inline block defines these too; both must agree to avoid silent
+     regressions if load order ever changes. */
+  --primary: #00ff9d;        /* Neon mint (matches index.html) */
+  --secondary: #00b3ff;      /* Cyan accent */
   --primary-dark: #1aa57a;
-  --bg-dark: #05070A; /* Deep black */
+  --bg-dark: #05070A;        /* Deep black */
   --bg-gradient: linear-gradient(135deg, #05070A 0%, #0a0b10 100%);
   --card-bg: rgba(20, 23, 36, 0.7);
   --text-primary: #e6edf3;
   --text-secondary: #94a3b8;
   --border-color: rgba(0, 255, 157, 0.15);
-  --font-display: 'Inter', 'Outfit', sans-serif;
+  --font-display: 'Outfit', 'Inter', sans-serif;
   --font-mono: 'Roboto Mono', monospace;
   /* Additional UI tokens */
   --glass-blur: 12px;
   --glass-bg: rgba(22, 25, 37, 0.6);
-  --accent-neon: #29F19C;
-  --shadow-neon: 0 0 20px rgba(41, 241, 156, 0.4);
+  --accent-neon: #00ff9d;     /* was #29F19C — unified with --primary */
+  --shadow-neon: 0 0 20px rgba(0, 255, 157, 0.4);
+  /* Radius scale (Phase C) */
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 100px;
 }
 
 * {
@@ -55,17 +63,19 @@ body {
   background: var(--primary);
 }
 
-/* Authentication Screen */
+/* Authentication Screen — kept in sync with inline <style> in index.html.
+   The inline block wins by load order; these values mirror it so the
+   external sheet is a correct fallback if the inline block is removed. */
 .auth-container {
-  max-width: 480px;
-  width: 90%;
-  margin: 8vh auto;
-  padding: 2.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-glow);
-  border-radius: 16px;
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-glow);
+  max-width: 440px;
+  width: 100%;
+  padding: 3rem 2.25rem;
+  background: rgba(13, 16, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  backdrop-filter: blur(25px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
 }
 
 .auth-tab {
@@ -120,11 +130,11 @@ body {
   box-shadow: 0 4px 16px rgba(0, 255, 157, 0.35);
 }
 
-/* Main Dashboard */
+/* Main Dashboard — sidebar width matches inline (350px) */
 .chat-container {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  height: 100vh;
+  grid-template-columns: 350px 1fr;
+  height: 100dvh;
 }
 
 .sidebar {
@@ -211,8 +221,8 @@ body {
 }
 
 .message.has-burn {
-  padding-bottom: 1.35rem;
-  overflow: hidden;
+  /* Burn bar is a normal-flow element (see .burn-bar below); no clipping. */
+  padding-bottom: 0.9rem;
 }
 
 .message.sent {
@@ -307,12 +317,12 @@ body {
 }
 
 .message.sent:hover {
-  transform: translateY(-2px) translateX(-2px) scale(1.015);
+  transform: translateY(-1px);
   box-shadow: 0 10px 30px rgba(0, 200, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .message.received:hover {
-  transform: translateY(-2px) translateX(2px) scale(1.015);
+  transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(0, 255, 157, 0.2);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px rgba(0, 255, 157, 0.08);
@@ -352,13 +362,15 @@ body {
 .message.sent .burn-seconds-active { color: #b3122b; }
 
 .burn-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  /* Normal flow (not absolute) so it never overlaps content above it.
+     Mirrors the inline <style> block in index.html. */
+  display: block;
+  width: 100%;
   height: 3px;
+  margin-top: 6px;
   background: rgba(0, 0, 0, 0.18);
   overflow: hidden;
+  border-radius: 0 0 14px 14px;
 }
 
 .burn-bar-fill {

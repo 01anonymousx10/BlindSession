@@ -15,6 +15,7 @@
     /* Styling overrides for premium, glassmorphism & matrix dark aesthetics */
     :root {
       --primary: #00ff9d;
+      --secondary: #00b3ff;
       --primary-dark: #00b36c;
       --bg-gradient: linear-gradient(135deg, #0a0b10 0%, #161925 100%);
       --card-bg: rgba(22, 25, 37, 0.7);
@@ -23,6 +24,11 @@
       --border-color: rgba(0, 255, 157, 0.15);
       --font-display: 'Outfit', sans-serif;
       --font-mono: 'Roboto Mono', monospace;
+      /* Radius scale */
+      --radius-sm: 7px;
+      --radius-md: 10px;
+      --radius-lg: 18px;
+      --radius-pill: 100px;
     }
 
     body {
@@ -197,7 +203,7 @@
       font-weight: 700;
       line-height: 1.2;
       margin-bottom: 1.25rem;
-      background: linear-gradient(90deg, #ffffff 0%, #00ff9d 100%);
+      background: linear-gradient(90deg, #ffffff 0%, var(--primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
@@ -265,7 +271,7 @@
           rgba(0, 255, 157, 0.09) 90deg,
           rgba(0, 179, 255, 0.07) 180deg,
           transparent 360deg);
-      animation: borderRotate 16s linear infinite;
+      animation: borderRotate 30s linear infinite;
       filter: blur(1px);
       pointer-events: none;
       z-index: 0;
@@ -472,7 +478,7 @@
     }
 
     .strength-seg.strong {
-      background: #00ff9d;
+      background: var(--primary);
       box-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
     }
 
@@ -494,7 +500,7 @@
     }
 
     .strength-label.strong {
-      color: #00ff9d;
+      color: var(--primary);
     }
 
     /* ─── Glassmorphism Feature Cards ───────────────────── */
@@ -803,7 +809,7 @@
 
     .brand-title {
       font-size: 2.2rem;
-      background: linear-gradient(90deg, #00ff9d 0%, #00b3ff 100%);
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 0.25rem;
@@ -860,6 +866,24 @@
       background: #33ffb1;
       transform: translateY(-2px);
       box-shadow: 0 6px 18px rgba(0, 255, 157, 0.35);
+    }
+
+    /* Secondary auth button (cyan accent — extracted from inline style) */
+    .auth-button.secondary {
+      background: var(--secondary);
+      color: white;
+      width: 100%;
+    }
+
+    .auth-button.secondary:hover {
+      background: #33c6ff;
+      box-shadow: 0 6px 18px rgba(0, 179, 255, 0.35);
+    }
+
+    /* Export backup button (cyan accent — extracted from inline style) */
+    .lock-session-btn.export {
+      color: var(--secondary);
+      border-color: rgba(0, 179, 255, 0.4);
     }
 
     /* Key Box styling */
@@ -981,7 +1005,7 @@
     .message {
       max-width: 65%;
       padding: 0.9rem 1.2rem;
-      border-radius: 18px;
+      border-radius: var(--radius-lg);
       line-height: 1.5;
       font-size: 0.95rem;
       position: relative;
@@ -1003,7 +1027,7 @@
 
     /* Premium SENT bubble — vibrant mint→cyan gradient, deep dark text */
     .message.sent {
-      background: linear-gradient(135deg, #00ff9d 0%, #00b3ff 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       border: 1px solid rgba(0, 255, 157, 0.45);
       color: #04121a;
       /* deep dark text for readability on bright gradient */
@@ -1024,15 +1048,15 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
-    /* Subtle hover zoom + slide effect */
+    /* Subtle hover lift — no lateral translate (avoids jittery feel) */
     .message.sent:hover {
-      transform: translateY(-2px) translateX(-2px) scale(1.015);
+      transform: translateY(-1px);
       box-shadow: 0 10px 30px rgba(0, 200, 255, 0.3),
         0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
     .message.received:hover {
-      transform: translateY(-2px) translateX(2px) scale(1.015);
+      transform: translateY(-1px);
       background: rgba(255, 255, 255, 0.06);
       border-color: rgba(0, 255, 157, 0.2);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
@@ -1144,7 +1168,7 @@
       display: block;
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, #00ff9d 0%, #00b3ff 100%);
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
       box-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
       transform-origin: left center;
       transition: width 1s linear;
@@ -1232,6 +1256,11 @@
       color: var(--primary);
       background: rgba(0, 255, 157, 0.06);
       box-shadow: 0 0 8px rgba(0, 255, 157, 0.15);
+    }
+
+    .attach-label svg {
+      width: 18px;
+      height: 18px;
     }
 
     /* Clear Chat button */
@@ -1533,7 +1562,7 @@
     }
 
     .presence-dot.online {
-      background: #00ff9d;
+      background: var(--primary);
       box-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     }
 
@@ -2176,7 +2205,7 @@
     .welcome-card h2 {
       font-size: 1.85rem;
       margin: 0 0 0.4rem 0;
-      background: linear-gradient(90deg, #ffffff 0%, #00ff9d 100%);
+      background: linear-gradient(90deg, #ffffff 0%, var(--primary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 700;
@@ -2537,13 +2566,13 @@
 
     /* ── Per-type neon accent (bottom border + icon glow) ── */
     .toast.toast-success::after {
-      background: #00ff9d;
+      background: var(--primary);
       box-shadow: 0 0 10px rgba(0, 255, 157, 0.8);
     }
 
     .toast.toast-success .toast-icon {
       background: rgba(0, 255, 157, 0.15);
-      color: #00ff9d;
+      color: var(--primary);
       box-shadow: 0 0 10px rgba(0, 255, 157, 0.35);
     }
 
@@ -2570,13 +2599,13 @@
     }
 
     .toast.toast-info::after {
-      background: #00b3ff;
+      background: var(--secondary);
       box-shadow: 0 0 10px rgba(0, 179, 255, 0.8);
     }
 
     .toast.toast-info .toast-icon {
       background: rgba(0, 179, 255, 0.15);
-      color: #00b3ff;
+      color: var(--secondary);
       box-shadow: 0 0 10px rgba(0, 179, 255, 0.35);
     }
 
@@ -2652,7 +2681,7 @@
       right: 0;
       bottom: 0;
       height: 2px;
-      background: #00ff9d;
+      background: var(--primary);
       box-shadow: 0 0 10px rgba(0, 255, 157, 0.7);
       border-radius: 0 0 18px 18px;
     }
@@ -2716,7 +2745,7 @@
 
     /* Neon Confirm button — green default */
     #confirm-ok {
-      background: linear-gradient(135deg, #00ff9d 0%, #00b3ff 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: #04121a;
       box-shadow: 0 0 14px rgba(0, 200, 255, 0.4);
     }
@@ -2818,7 +2847,7 @@
       width: 11px;
       height: 11px;
       border-radius: 50%;
-      background: #00ff9d;
+      background: var(--primary);
       border: 2px solid #0d1016;
       box-shadow: 0 0 6px rgba(0, 255, 157, 0.5);
       animation: presence-pulse 2.5s ease-in-out infinite;
@@ -2864,7 +2893,7 @@
 
     .profile-status {
       font-size: 0.62rem;
-      color: #00ff9d;
+      color: var(--primary);
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -2877,7 +2906,7 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: #00ff9d;
+      background: var(--primary);
       display: inline-block;
     }
 
@@ -3532,7 +3561,7 @@
     }
 
     .chat-header-avatar-dot.online {
-      background: #00ff9d;
+      background: var(--primary);
       box-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
     }
 
@@ -3547,6 +3576,20 @@
     .chat-header-info h2 {
       margin: 0;
       line-height: 1.3;
+    }
+
+    /* Chat header title/subtitle (extracted from inline styles) */
+    #chat-recipient-title {
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    #chat-recipient-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin: 0.15rem 0 0;
     }
 
     /* Presence/status as compact glass tags */
@@ -3567,13 +3610,13 @@
     }
 
     .presence-tag.online {
-      color: #00ff9d;
+      color: var(--primary);
       border-color: rgba(0, 255, 157, 0.2);
       background: rgba(0, 255, 157, 0.06);
     }
 
     .presence-tag.active-in-chat {
-      color: #00b3ff;
+      color: var(--secondary);
       border-color: rgba(0, 179, 255, 0.2);
       background: rgba(0, 179, 255, 0.06);
       animation: tag-pulse 2s ease-in-out infinite;
@@ -3747,11 +3790,11 @@
     }
 
     .connection-halo.connecting .halo-core {
-      background: #00b3ff;
+      background: var(--secondary);
     }
 
     .connection-halo.connecting {
-      color: #00b3ff;
+      color: var(--secondary);
     }
 
     .connection-halo.offline .halo-core {
@@ -4113,8 +4156,7 @@
               <strong>Important:</strong> Your keys have been encrypted with your passphrase and stored locally. Do not
               lose your passphrase; it is required to unlock your chat session on refresh.
             </p>
-            <button onclick="enterChatDashboard()" class="auth-button"
-              style="width: 100%; background: #00b3ff; color: white;">Enter Messenger</button>
+            <button onclick="enterChatDashboard()" class="auth-button secondary">Enter Messenger</button>
           </div>
         </div>
 
@@ -4240,8 +4282,7 @@
 
       <!-- Redesigned Action Buttons -->
       <div class="sidebar-actions">
-        <button class="lock-session-btn" onclick="handleExportBackup()" title="Export Encrypted Key Backup"
-          style="color: #00b3ff; border-color: rgba(0,179,255,0.4);">
+        <button class="lock-session-btn export" onclick="handleExportBackup()" title="Export Encrypted Key Backup">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -4469,10 +4510,9 @@
             <span id="chat-header-avatar-dot" class="chat-header-avatar-dot offline"></span>
           </div>
           <div class="chat-header-info">
-            <h2 id="chat-recipient-title" style="color: white; font-size: 1.05rem; font-weight: 600;">Select a Contact
+            <h2 id="chat-recipient-title">Select a Contact
             </h2>
-            <p id="chat-recipient-subtitle"
-              style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); margin: 0.15rem 0 0;">
+            <p id="chat-recipient-subtitle">
             </p>
           </div>
         </div>
@@ -4579,8 +4619,12 @@
       <!-- Input Bar -->
       <div class="message-input-area">
         <!-- Paperclip attach button -->
-        <label id="attach-btn" class="attach-label" title="Attach image">
-          📎
+        <label id="attach-btn" class="attach-label" title="Attach image"
+          aria-label="Attach image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
           <input type="file" id="attach-file-input" accept="image/*,video/*" style="display:none" />
         </label>
         <input type="text" id="message-field" placeholder="Type end-to-end encrypted message..." disabled>
