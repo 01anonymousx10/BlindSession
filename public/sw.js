@@ -1,5 +1,5 @@
-// BlindSession Service Worker — minimal offline shell cache
-const CACHE_NAME = 'blindsession-v1';
+// BlindSession Service Worker — network-first for fresh updates, cache fallback offline
+const CACHE_NAME = 'blindsession-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -28,24 +28,19 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  // Only handle GET requests
   if (req.method !== 'GET') return;
-  // Don't intercept API or WebSocket calls — always go to network
   const url = new URL(req.url);
+  // Don't intercept API or WebSocket calls — always go to network
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws')) return;
 
-  // Cache-first for static assets, fall back to network
+  // Network-first: try network, fall back to cache when offline
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        // Cache successful responses for same-origin requests
-        if (res.ok && url.origin === self.location.origin) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-        }
-        return res;
-      }).catch(() => cached);
-    })
+    fetch(req).then((res) => {
+      if (res.ok && url.origin === self.location.origin) {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+      }
+      return res;
+    }).catch(() => caches.match(req))
   );
 });
