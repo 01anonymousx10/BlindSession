@@ -546,6 +546,7 @@ async function handleGenerateIdentity() {
   const authWrapper = document.querySelector('.auth-wrapper');
   if (authWrapper) authWrapper.setAttribute('aria-busy', 'true');
   try {
+    await window.SecureCrypto.init();
     const identityKeys = window.SecureCrypto.generateIdentityKeyPair();
     const preKeys = window.SecureCrypto.generatePreKeyPair();
     const preKeySignature = window.SecureCrypto.signPreKey(identityKeys.privateKey, preKeys.publicKey);
@@ -702,7 +703,7 @@ function encryptAndStoreKeys(passphrase) {
 /**
  * 2. Identity Unlock & Decryption
  */
-function handleUnlockIdentity() {
+async function handleUnlockIdentity() {
   const passphrase = document.getElementById('login-passphrase').value;
   const errorEl = document.getElementById('login-error');
   errorEl.classList.add('hidden');
@@ -734,6 +735,7 @@ function handleUnlockIdentity() {
   const authWrapper = document.querySelector('.auth-wrapper');
   if (authWrapper) authWrapper.setAttribute('aria-busy', 'true');
   try {
+    await window.SecureCrypto.init();
     const blob = JSON.parse(storedData);
     const sodium = window.sodium;
 
@@ -798,6 +800,7 @@ function handleUnlockIdentity() {
  */
 async function handleInstantDemo() {
   try {
+    await window.SecureCrypto.init();
     const identityKeys = window.SecureCrypto.generateIdentityKeyPair();
     const preKeys = window.SecureCrypto.generatePreKeyPair();
 

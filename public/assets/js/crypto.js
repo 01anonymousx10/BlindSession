@@ -9,7 +9,18 @@ class SecureCrypto {
   // Initialize libsodium
   async init() {
     if (this.sodium) return;
-    // Wait for the WASM build to load
+    // Wait for the WASM build to be available on window.sodium.
+    // The ES module in index.html sets window.sodium after libsodium loads.
+    // If init() is called before that completes, poll until ready.
+    if (!window.sodium) {
+      await new Promise((resolve) => {
+        const check = () => {
+          if (window.sodium) resolve();
+          else setTimeout(check, 50);
+        };
+        check();
+      });
+    }
     await window.sodium.ready;
     this.sodium = window.sodium;
   }
