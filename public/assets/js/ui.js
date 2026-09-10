@@ -39,6 +39,25 @@ const lastRenderedMsgCount = {};
 // Guard so a second transition request while one is mid-flight is ignored.
 let screenTransitioning = false;
 
+// ─── Async button loading-state helper ──────────
+// Disables a button and shows a "Working…" label while an async operation
+// runs, then restores it in finally. Usage:
+//   const done = setButtonLoading(btn, 'Generating…');
+//   try { ... } finally { done(); }
+function setButtonLoading(btn, loadingText) {
+  if (!btn) return () => {};
+  const originalText = btn.innerHTML;
+  const originalDisabled = btn.disabled;
+  btn.disabled = true;
+  btn.innerHTML = loadingText || 'Working…';
+  btn.classList.add('is-loading');
+  return function restore() {
+    btn.disabled = originalDisabled;
+    btn.innerHTML = originalText;
+    btn.classList.remove('is-loading');
+  };
+}
+
 /**
  * Cross-fade + scale transition between the auth and chat screens.
  * Pins both full-viewport for 0.5s, fades+shrinks `outId` out while
@@ -424,7 +443,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeCta = document.getElementById('welcome-cta');
     const dismissWelcome = () => {
       const overlay = document.getElementById('welcome-overlay');
-      if (overlay) overlay.classList.add('hidden');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        if (_welcomeModalClose) { _welcomeModalClose(); _welcomeModalClose = null; }
+        localStorage.setItem('welcome_seen', 'true');
+      }
     };
     if (welcomeDismiss) {
       welcomeDismiss.addEventListener('click', dismissWelcome);
@@ -511,12 +534,14 @@ async function handleGenerateIdentity() {
     return;
   }
 
+  const btn = document.querySelector('button[onclick="handleGenerateIdentity()"]');
+  const restoreBtn = setButtonLoading(btn, 'Generating…');
   try {
     const identityKeys = window.SecureCrypto.generateIdentityKeyPair();
     const preKeys = window.SecureCrypto.generatePreKeyPair();
     const preKeySignature = window.SecureCrypto.signPreKey(identityKeys.privateKey, preKeys.publicKey);
 
-    const response = await fetch('http://localhost:3000/api/auth/register', {
+    const response = await fetch(`${window.location.origin}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -580,7 +605,7 @@ async function handleGenerateIdentity() {
     const recoveryBlobStr = localStorage.getItem('encrypted_recovery_code');
     if (recoveryBlobStr) {
       try {
-        await fetch('http://localhost:3000/api/auth/register', {
+        await fetch(`${window.location.origin}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -602,6 +627,8 @@ async function handleGenerateIdentity() {
   } catch (err) {
     console.error('Identity creation failed:', err);
     showToast(`Failed to generate identity: ${err.message}`, 'error', 6000);
+  } finally {
+    restoreBtn();
   }
 }
 
@@ -692,6 +719,8 @@ function handleUnlockIdentity() {
     return;
   }
 
+  const btn = document.querySelector('button[onclick="handleUnlockIdentity()"]');
+  const restoreBtn = setButtonLoading(btn, 'Unlocking…');
   try {
     const blob = JSON.parse(storedData);
     const sodium = window.sodium;
@@ -746,6 +775,8 @@ function handleUnlockIdentity() {
     console.error('Unlock failed:', err);
     errorEl.textContent = 'Invalid passphrase. Decryption failed.';
     errorEl.classList.remove('hidden');
+  } finally {
+    restoreBtn();
   }
 }
 
@@ -811,10 +842,21 @@ function enterChatDashboard() {
     }
   });
 
-  // Ensure welcome overlay is visible on load
+  // Ensure welcome overlay is visible on load (unless already dismissed before)
   const welcomeOverlay = document.getElementById('welcome-overlay');
   if (welcomeOverlay) {
-    welcomeOverlay.classList.remove('hidden');
+    if (localStorage.getItem('welcome_seen') === 'true') {
+      welcomeOverlay.classList.add('hidden');
+    } else {
+      welcomeOverlay.classList.remove('hidden');
+      if (_welcomeModalClose) _welcomeModalClose();
+      _welcomeModalClose = openModalTrap(welcomeOverlay);
+      welcomeOverlay.addEventListener('modal-close', () => {
+        welcomeOverlay.classList.add('hidden');
+        if (_welcomeModalClose) { _welcomeModalClose(); _welcomeModalClose = null; }
+        localStorage.setItem('welcome_seen', 'true');
+      }, { once: true });
+    }
   }
 
   // Load contacts only now — after the user has unlocked or registered.
@@ -902,7 +944,7 @@ async function checkShreddedContacts() {
   for (const c of clientSession.contacts) {
     if (c.fingerprint === DEMO_FP) continue;
     try {
-      const response = await fetch(`http://localhost:3000/api/users/${c.fingerprint}`);
+      const response = await fetch(`${window.location.origin}/api/users/${c.fingerprint}`);
       if (response.status === 404) {
         if (!clientSession.shredded[c.fingerprint]) {
           clientSession.shredded[c.fingerprint] = true;
@@ -964,11 +1006,14 @@ async function handleAddContact() {
     return;
   }
 
+  const addBtn = document.querySelector('button[onclick="handleAddContact()"]');
+  const restoreBtn = setButtonLoading(addBtn, 'Adding…');
+
   // Verify the account still exists on the server before adding, so we don't
   // create a ghost entry for a shredded fingerprint. (Demo/offline mode skips
   // this check because there's no directory to query.)
   try {
-    const res = await fetch(`http://localhost:3000/api/users/${hash}`);
+    const res = await fetch(`${window.location.origin}/api/users/${hash}`);
     if (res.status === 404) {
       showToast('This account no longer exists on the server (it may have been deleted). It cannot be re-added.', 'warning', 6000);
       return;
@@ -976,6 +1021,8 @@ async function handleAddContact() {
     // Other failures (server down) → fall through and add optimistically.
   } catch (err) {
     // Network error — allow the add; presence/handshake will surface issues later.
+  } finally {
+    restoreBtn();
   }
 
   clientSession.contacts.push({ fingerprint: hash, addedAt: Date.now() });
@@ -1233,7 +1280,7 @@ async function handleSelectContact(contact) {
         prekey_signature: mockPreKeySignature
       };
     } else {
-      const res = await fetch(`http://localhost:3000/api/users/${contact.fingerprint}`);
+      const res = await fetch(`${window.location.origin}/api/users/${contact.fingerprint}`);
       if (!res.ok) {
         if (res.status === 404) {
           // Account was shredded server-side. Flag it so the sidebar shows the
@@ -1360,7 +1407,7 @@ async function fetchOfflineMessages() {
   );
 
   try {
-    const response = await fetch(`http://localhost:3000${path}`, {
+    const response = await fetch(`${window.location.origin}${path}`, {
       method: 'GET',
       headers: {
         'X-Identity-Key': clientSession.identityPublicKey,
@@ -1393,7 +1440,7 @@ async function fetchOfflineMessages() {
       // Slow path: fetch the sender's prekey bundle and derive the key.
       if (!sessionKey) {
         try {
-          const res = await fetch(`http://localhost:3000/api/users/${msg.sender_hash}`);
+          const res = await fetch(`${window.location.origin}/api/users/${msg.sender_hash}`);
           if (!res.ok) {
             console.warn(`Skipping offline message: sender ${msg.sender_hash.substring(0, 8)}… not found on server`);
             continue;
@@ -1497,7 +1544,7 @@ async function fetchPendingChatEvents() {
   );
 
   try {
-    const response = await fetch(`http://localhost:3000${path}`, {
+    const response = await fetch(`${window.location.origin}${path}`, {
       method: 'GET',
       headers: {
         'X-Identity-Key': clientSession.identityPublicKey,
@@ -1574,7 +1621,7 @@ async function fetchPendingReadReceipts() {
   );
 
   try {
-    const response = await fetch(`http://localhost:3000${path}`, {
+    const response = await fetch(`${window.location.origin}${path}`, {
       method: 'GET',
       headers: {
         'X-Identity-Key': clientSession.identityPublicKey,
@@ -1628,6 +1675,9 @@ async function handleSendE2eeMessage() {
   if (!plainText || !clientSession.activeContact || !clientSession.activeSessionKey) {
     return;
   }
+
+  const sendBtn = document.getElementById('send-msg-btn');
+  const restoreBtn = setButtonLoading(sendBtn, 'Sending…');
 
   const recipientHash = clientSession.activeContact.fingerprint;
 
@@ -1692,6 +1742,7 @@ async function handleSendE2eeMessage() {
   } else {
     showToast(`Failed to send message: ${result.error}`, 'error', 6000);
   }
+  restoreBtn();
 }
 
 /**
@@ -1740,7 +1791,7 @@ async function handleIncomingE2eeMessage(msg) {
   } else {
     // Background message from another contact
     try {
-      const res = await fetch(`http://localhost:3000/api/users/${msg.sender_hash}`);
+      const res = await fetch(`${window.location.origin}/api/users/${msg.sender_hash}`);
       if (res.ok) {
         const bundle = await res.json();
         const contactSessionKey = window.SecureCrypto.deriveSessionKey(
@@ -2175,7 +2226,8 @@ function handleLockSession() {
   transitionScreens('chat-screen', 'auth-screen').then(() => {
     document.getElementById('login-passphrase').value = '';
 
-    // Reset welcome overlay
+    // Reset welcome overlay (will be re-hidden by enterChatDashboard if
+    // the user already dismissed it before)
     const welcomeOverlay = document.getElementById('welcome-overlay');
     if (welcomeOverlay) {
       welcomeOverlay.classList.remove('hidden');
@@ -2358,9 +2410,61 @@ document.addEventListener('keydown', (e) => {
 
 // ─── Mobile Sidebar Drawer ──────────────────────────
 /**
- * Open the contacts sidebar as an off-canvas drawer on mobile.
- * On desktop this is a no-op (the sidebar is always visible).
+ * Reusable modal focus-trap + Escape handler.
+ * Call openModalTrap(overlayEl) when showing a modal; it returns a
+ * close() function that removes the listeners and restores focus.
  */
+function openModalTrap(overlay) {
+  if (!overlay) return () => {};
+  const lastFocus = document.activeElement;
+
+  // Focus the first focusable element inside the modal
+  const focusable = overlay.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusable.length > 0) {
+    // Prefer the dismiss/close button if present
+    const closeBtn = overlay.querySelector('.welcome-dismiss, .image-lightbox-close');
+    (closeBtn || focusable[0]).focus();
+  }
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      overlay.dispatchEvent(new CustomEvent('modal-close'));
+      return;
+    }
+    if (e.key === 'Tab') {
+      const f = overlay.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (f.length === 0) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+  document.addEventListener('keydown', onKeyDown);
+
+  return function close() {
+    document.removeEventListener('keydown', onKeyDown);
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+  };
+}
+
+// Active modal traps — one at a time
+let _verifyModalClose = null;
+let _profileModalClose = null;
+let _welcomeModalClose = null;
+
 function openMobileSidebar() {
   const sidebar = document.getElementById('chat-sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
@@ -3045,7 +3149,7 @@ async function handlePanicShredder(silent = false) {
         ''
       );
 
-      const response = await fetch(`http://localhost:3000${path}`, {
+      const response = await fetch(`${window.location.origin}${path}`, {
         method: 'DELETE',
         headers: {
           'X-Identity-Key': clientSession.identityPublicKey,
@@ -3303,6 +3407,9 @@ function handleVerifySessionModal() {
   const overlay = document.getElementById('verify-overlay');
   if (overlay) {
     overlay.classList.remove('hidden');
+    if (_verifyModalClose) _verifyModalClose();
+    _verifyModalClose = openModalTrap(overlay);
+    overlay.addEventListener('modal-close', closeVerifyModal, { once: true });
   }
 }
 
@@ -3313,6 +3420,7 @@ function closeVerifyModal() {
   const overlay = document.getElementById('verify-overlay');
   if (overlay) {
     overlay.classList.add('hidden');
+    if (_verifyModalClose) { _verifyModalClose(); _verifyModalClose = null; }
   }
 }
 
@@ -3360,6 +3468,9 @@ function openProfileModal() {
   const overlay = document.getElementById('profile-overlay');
   if (overlay) {
     overlay.classList.remove('hidden');
+    if (_profileModalClose) _profileModalClose();
+    _profileModalClose = openModalTrap(overlay);
+    overlay.addEventListener('modal-close', closeProfileModal, { once: true });
   }
 }
 
@@ -3370,6 +3481,7 @@ function closeProfileModal() {
   const overlay = document.getElementById('profile-overlay');
   if (overlay) {
     overlay.classList.add('hidden');
+    if (_profileModalClose) { _profileModalClose(); _profileModalClose = null; }
   }
 }
 
@@ -3413,7 +3525,7 @@ async function handleSaveProfileName() {
   for (const contact of clientSession.contacts) {
     try {
       // Derive a session key for this contact to encrypt the profile frame
-      const res = await fetch(`http://localhost:3000/api/users/${contact.fingerprint}`);
+      const res = await fetch(`${window.location.origin}/api/users/${contact.fingerprint}`);
       if (!res.ok) continue;
       const bundle = await res.json();
       const sessionKey = window.SecureCrypto.deriveSessionKey(
@@ -3625,7 +3737,7 @@ async function handleRecoveryReset() {
   let encryptedRecovery = localStorage.getItem('encrypted_recovery_code');
   if (!encryptedRecovery && fpInput) {
     try {
-      const res = await fetch(`http://localhost:3000/api/auth/recovery/${fpInput}`);
+      const res = await fetch(`${window.location.origin}/api/auth/recovery/${fpInput}`);
       if (res.ok) {
         const data = await res.json();
         encryptedRecovery = data.recovery_blob;
@@ -3689,7 +3801,7 @@ async function rotatePreKey() {
     const newPreKeys = window.SecureCrypto.generatePreKeyPair();
     const newSig = window.SecureCrypto.signPreKey(clientSession.identityPrivateKey, newPreKeys.publicKey);
 
-    const res = await fetch('http://localhost:3000/api/auth/register', {
+    const res = await fetch(`${window.location.origin}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

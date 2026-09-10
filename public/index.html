@@ -910,6 +910,13 @@
       outline-offset: 2px;
     }
 
+    /* Loading-state for async buttons — dim + disable cursor */
+    button.is-loading {
+      opacity: 0.65;
+      cursor: wait;
+      pointer-events: none;
+    }
+
     h1,
     h2,
     h3 {
@@ -4825,6 +4832,26 @@
         seg3.classList.add('strong');
         lbl.classList.add('strong');
         lbl.textContent = 'Strong ✓';
+      }
+    });
+
+    /* ── Enter-to-submit on auth + add-contact inputs ───── */
+    document.getElementById('reg-passphrase').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleGenerateIdentity();
+      }
+    });
+    document.getElementById('login-passphrase').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleUnlockIdentity();
+      }
+    });
+    document.getElementById('new-contact-hash').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleAddContact();
       }
     });
 

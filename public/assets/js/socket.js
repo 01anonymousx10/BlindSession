@@ -4,11 +4,11 @@
 class SecureSocket {
   constructor() {
     this.socket = null;
-    this.serverUrl = 'ws://localhost:3000/ws';
-    // Base origin only (no '/api' suffix) so route paths below can carry the
-    // full '/api/...' prefix. A '/api' suffix here used to combine with a
-    // '/api/chat/send' path into '/api/api/chat/send' → 404 'Not Found'.
-    this.httpUrl = 'http://localhost:3000';
+    // Derive URLs from the current origin so the client works on any host,
+    // port, or domain (Docker, reverse proxy, HTTPS, etc.) without code changes.
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    this.serverUrl = `${wsProto}//${window.location.host}/ws`;
+    this.httpUrl = window.location.origin;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.isAuthenticated = false;
