@@ -85,6 +85,8 @@
     .landing-wrapper {
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
+      width: 100%;
+      flex: 1 1 auto;
       height: 100dvh;
       background: #050608;
     }
@@ -740,14 +742,14 @@
       opacity: 1;
     }
 
-    /* Compact sidebar rail for medium screens (900px–1024px).
+    /* Compact sidebar rail for medium screens (581px–1024px).
        Shows avatars + names only, like Snapchat web's narrow contact bar.
        Full fingerprint, search, add-contact, and action buttons are hidden
-       to save space; they remain available in the mobile drawer (<900px)
+       to save space; they remain available in the mobile drawer (<580px)
        and on desktop (>1024px). */
-    @media (max-width: 1024px) and (min-width: 901px) {
+    @media (max-width: 1024px) and (min-width: 581px) {
       .chat-container {
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 220px 1fr;
       }
 
       /* Compact the user profile card — show avatar + name only */
@@ -812,9 +814,9 @@
       }
     }
 
-    /* Mobile breakpoint for the chat screen — drawer kicks in at 900px
-       so the chat gets full width on tablets and narrow laptops. */
-    @media (max-width: 900px) {
+    /* Mobile breakpoint for the chat screen — drawer kicks in at 580px
+       so the chat gets full width on phones and very narrow viewports. */
+    @media (max-width: 580px) {
       .chat-container {
         grid-template-columns: 1fr;
       }
@@ -1086,6 +1088,7 @@
       display: grid;
       grid-template-columns: 350px 1fr;
       width: 100%;
+      flex: 1 1 auto;
       height: 100dvh;
       max-height: 100dvh;
       overflow: hidden;

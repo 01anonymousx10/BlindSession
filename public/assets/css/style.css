@@ -40,6 +40,8 @@ body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: var(--leading-normal);
   height: 100vh;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -135,6 +137,7 @@ body {
   display: grid;
   grid-template-columns: 350px 1fr;
   width: 100%;
+  flex: 1 1 auto;
   height: 100dvh;
 }
 
@@ -526,7 +529,7 @@ body {
   50%      { transform: scale(1.06); }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 580px) {
   .chat-container {
     grid-template-columns: 1fr;
   }
