@@ -739,7 +739,7 @@
        and on desktop (>1024px). */
     @media (max-width: 1024px) and (min-width: 901px) {
       .chat-container {
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 260px 6px 1fr;
       }
 
       /* Compact the user profile card — show avatar + name only */
@@ -809,6 +809,10 @@
     @media (max-width: 900px) {
       .chat-container {
         grid-template-columns: 1fr;
+      }
+
+      .sidebar-resize-handle {
+        display: none;
       }
 
       .sidebar {
@@ -1076,7 +1080,7 @@
     /* Chat dashboard layout */
     .chat-container {
       display: grid;
-      grid-template-columns: 350px 1fr;
+      grid-template-columns: var(--sidebar-width, 350px) 6px 1fr;
       height: 100dvh;
       max-height: 100dvh;
       overflow: hidden;
