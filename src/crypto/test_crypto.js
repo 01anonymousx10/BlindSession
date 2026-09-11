@@ -67,7 +67,7 @@ async function runTests() {
 
     // 4. XChaCha20-Poly1305 Symmetric Message Encryption & Decryption
     console.log('\nStep 4: Simulating E2EE Message transmission...');
-    const plainText = "Secret message: Antigravity is pairs coding with User!";
+    const plainText = "Secret message: End-to-end encrypted chat is secure!";
     const plainTextBytes = sodium.from_string(plainText);
 
     // Alice encrypts message with the derived session key
