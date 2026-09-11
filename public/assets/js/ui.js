@@ -3514,6 +3514,7 @@ function handleCloseChat() {
     messageField.setAttribute('disabled', 'true');
   }
   if (sendBtn) sendBtn.setAttribute('disabled', 'true');
+  document.getElementById('message-input-area').classList.add('no-contact');
 
   // 5. Show the security dashboard empty state
   const messagesBox = document.getElementById('chat-messages');
