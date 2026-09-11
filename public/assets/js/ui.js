@@ -3519,6 +3519,9 @@ function handleCloseChat() {
   document.getElementById('message-input-area').classList.add('no-contact');
   document.getElementById('chat-action-bar').classList.add('no-contact');
 
+  // 5. Close the search bar if it's open
+  closeChatSearch();
+
   // 5. Show the security dashboard empty state
   const messagesBox = document.getElementById('chat-messages');
   if (messagesBox) {
