@@ -1376,6 +1376,7 @@ async function handleSelectContact(contact) {
 
     document.getElementById('message-field').removeAttribute('disabled');
     document.getElementById('send-msg-btn').removeAttribute('disabled');
+    document.getElementById('message-input-area').classList.remove('no-contact');
 
     await fetchOfflineMessages();
     await fetchPendingChatEvents();
@@ -1387,6 +1388,7 @@ async function handleSelectContact(contact) {
     messagesBox.innerHTML = getErrorStateHTML(err.message);
     document.getElementById('message-field').setAttribute('disabled', 'true');
     document.getElementById('send-msg-btn').setAttribute('disabled', 'true');
+    document.getElementById('message-input-area').classList.add('no-contact');
   }
 }
 
@@ -1428,7 +1430,7 @@ function updateActiveChatPresence() {
 
   // Build segmented fingerprint (blocks of 8) as the base subtitle text
   const formattedFp = formatFingerprint(fp);
-  let statusHtml = `<span class="chat-hash-text" style="cursor:pointer;" title="Click to copy fingerprint" onclick="copyToClipboard('${fp}','Fingerprint copied!');">${formattedFp}</span>`;
+  let statusHtml = `<span class="chat-hash-text" title="Click to copy fingerprint">${formattedFp}</span>`;
 
   // Typing indicator takes priority over presence tags
   if (isTyping) {
@@ -3581,6 +3583,7 @@ async function handleRemoveContact(contact) {
     if (headerDot) headerDot.className = 'chat-header-avatar-dot offline';
     document.getElementById('message-field').setAttribute('disabled', 'true');
     document.getElementById('send-msg-btn').setAttribute('disabled', 'true');
+    document.getElementById('message-input-area').classList.add('no-contact');
 
     const messagesBox = document.getElementById('chat-messages');
     if (messagesBox) {

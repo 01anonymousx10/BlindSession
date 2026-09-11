@@ -1383,6 +1383,13 @@
       gap: 0.75rem;
     }
 
+    /* Hide the input bar entirely when no contact is selected.
+       The security dashboard fills the empty state — a greyed-out
+       input bar looks unfinished. */
+    .message-input-area.no-contact {
+      display: none;
+    }
+
     .message-input-area input {
       flex: 1;
       background: rgba(255, 255, 255, 0.03);
@@ -5347,8 +5354,8 @@
         </div>
       </div>
 
-      <!-- Input Bar -->
-      <div class="message-input-area">
+      <!-- Input Bar — hidden when no contact is selected -->
+      <div class="message-input-area no-contact" id="message-input-area">
         <!-- Paperclip attach button -->
         <label id="attach-btn" class="attach-label" title="Attach image"
           aria-label="Attach image">
@@ -5358,8 +5365,8 @@
           </svg>
           <input type="file" id="attach-file-input" accept="image/*,video/*" style="display:none" />
         </label>
-        <input type="text" id="message-field" placeholder="Type end-to-end encrypted message..." disabled>
-        <button id="send-msg-btn" onclick="handleSendE2eeMessage()" disabled>Send</button>
+        <input type="text" id="message-field" placeholder="Type end-to-end encrypted message...">
+        <button id="send-msg-btn" onclick="handleSendE2eeMessage()">Send</button>
       </div>
     </div>
   </div>
