@@ -4099,7 +4099,7 @@ function formatFingerprint(fp) {
 }
 
 /**
- * Populates and opens the visual verification modal ("Safety Numbers") for E2EE validation.
+ * Populates and opens the visual verification modal ("Fingerprints") for E2EE validation.
  */
 function handleVerifySessionModal() {
   if (!clientSession.activeContact) {

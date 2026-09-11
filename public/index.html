@@ -5038,21 +5038,23 @@
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h2>Verify Session Safety Numbers</h2>
-          <p class="welcome-subtitle">Compare these numbers to verify end-to-end encryption</p>
+          <h2>Verify Session Fingerprints</h2>
+          <p class="welcome-subtitle">Compare these fingerprints to verify end-to-end encryption</p>
 
           <div
             style="margin-top: 1.5rem; text-align: left; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 8px;">
             <p
               style="font-size: var(--fs-sm); color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);">
-              YOUR DETERMINISTIC NAME: <span id="verify-my-name" style="color: var(--primary);"></span></p>
+              YOUR IDENTITY: <span id="verify-my-name" style="color: var(--primary);"></span></p>
+            <p style="font-size: var(--fs-xs); color: var(--text-secondary); opacity: 0.6; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Fingerprint</p>
             <p id="verify-my-fp"
               style="font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; color: white; line-height: var(--leading-normal); margin-bottom: 1.25rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
             </p>
 
             <p
               style="font-size: var(--fs-sm); color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: var(--fw-semibold); font-family: var(--font-display);">
-              CONTACT'S DETERMINISTIC NAME: <span id="verify-contact-name" style="color: var(--primary);"></span></p>
+              CONTACT'S IDENTITY: <span id="verify-contact-name" style="color: var(--primary);"></span></p>
+            <p style="font-size: var(--fs-xs); color: var(--text-secondary); opacity: 0.6; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Fingerprint</p>
             <p id="verify-contact-fp"
               style="font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; color: white; line-height: var(--leading-normal); background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
             </p>
@@ -5226,7 +5228,7 @@
         </div>
         <div class="chat-action-bar no-contact" id="chat-action-bar">
           <button id="verify-session-btn" class="action-bar-btn verify-btn" onclick="handleVerifySessionModal()"
-            title="Verify E2EE Safety Numbers" aria-label="Verify Session">
+            title="Verify E2EE Fingerprints" aria-label="Verify Session">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
