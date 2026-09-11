@@ -1377,6 +1377,7 @@ async function handleSelectContact(contact) {
     document.getElementById('message-field').removeAttribute('disabled');
     document.getElementById('send-msg-btn').removeAttribute('disabled');
     document.getElementById('message-input-area').classList.remove('no-contact');
+    document.getElementById('chat-action-bar').classList.remove('no-contact');
 
     await fetchOfflineMessages();
     await fetchPendingChatEvents();
@@ -1389,6 +1390,7 @@ async function handleSelectContact(contact) {
     document.getElementById('message-field').setAttribute('disabled', 'true');
     document.getElementById('send-msg-btn').setAttribute('disabled', 'true');
     document.getElementById('message-input-area').classList.add('no-contact');
+    document.getElementById('chat-action-bar').classList.add('no-contact');
   }
 }
 
@@ -3515,6 +3517,7 @@ function handleCloseChat() {
   }
   if (sendBtn) sendBtn.setAttribute('disabled', 'true');
   document.getElementById('message-input-area').classList.add('no-contact');
+  document.getElementById('chat-action-bar').classList.add('no-contact');
 
   // 5. Show the security dashboard empty state
   const messagesBox = document.getElementById('chat-messages');
@@ -3585,6 +3588,7 @@ async function handleRemoveContact(contact) {
     document.getElementById('message-field').setAttribute('disabled', 'true');
     document.getElementById('send-msg-btn').setAttribute('disabled', 'true');
     document.getElementById('message-input-area').classList.add('no-contact');
+    document.getElementById('chat-action-bar').classList.add('no-contact');
 
     const messagesBox = document.getElementById('chat-messages');
     if (messagesBox) {

@@ -3904,6 +3904,11 @@
       min-width: 0;
     }
 
+    /* Hide all action bar buttons except Help when no contact is selected */
+    .chat-action-bar.no-contact > *:not(#help-btn) {
+      display: none;
+    }
+
     .action-bar-btn {
       width: 32px;
       height: 32px;
@@ -5219,7 +5224,7 @@
             </p>
           </div>
         </div>
-        <div class="chat-action-bar">
+        <div class="chat-action-bar no-contact" id="chat-action-bar">
           <button id="verify-session-btn" class="action-bar-btn verify-btn" onclick="handleVerifySessionModal()"
             title="Verify E2EE Safety Numbers" aria-label="Verify Session">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
