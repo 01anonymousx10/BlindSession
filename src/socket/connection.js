@@ -247,10 +247,12 @@ async function websocketRoutes(fastify, options) {
           });
 
           if (!isOnline) {
-            // Queue in database for offline retrieval
+            // Queue in database for offline retrieval — persist the
+            // client-generated message_id so the delivery notification sent
+            // when the recipient pulls the queue can be matched precisely.
             const insertResult = await db.query(
-              'INSERT INTO messages (sender_id, recipient_id, ciphertext, nonce) VALUES ($1, $2, $3, $4) RETURNING id',
-              [userId, recipientId, ciphertext, nonce]
+              'INSERT INTO messages (sender_id, recipient_id, ciphertext, nonce, message_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+              [userId, recipientId, ciphertext, nonce, message_id || null]
             );
             const dbMessageId = insertResult.rows[0].id;
             socket.send(JSON.stringify({

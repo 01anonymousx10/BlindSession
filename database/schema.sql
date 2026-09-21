@@ -15,23 +15,18 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. One-Time Prekeys (For PFS / X3DH handshake)
-CREATE TABLE IF NOT EXISTS one_time_prekeys (
-    id SERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    public_key TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. Messages Queue Table (Ephemeral)
+-- 2. Messages Queue Table (Ephemeral)
+-- Rows are DELETED on retrieval (server-blind: no message archive kept).
+-- message_id is the client-generated correlation ID used to match the
+-- 'delivered' notification back to the correct sent bubble.
 CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
     recipient_id UUID REFERENCES users(id) ON DELETE CASCADE,
     ciphertext TEXT NOT NULL,                    -- Encrypted payload (XChaCha20-Poly1305 payload)
     nonce VARCHAR(48) NOT NULL,                  -- Random cryptographic nonce
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    delivered_at TIMESTAMP WITH TIME ZONE        -- Populate upon delivery. Cleaned up periodically.
+    message_id VARCHAR(64),                      -- Client correlation ID for delivery receipts
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 4. Chat Events Table (disappearing-timer config changes & clear-chat events)
@@ -61,6 +56,6 @@ CREATE TABLE IF NOT EXISTS read_receipts (
 
 -- Indexes for performance & quick message queries
 CREATE INDEX IF NOT EXISTS idx_users_identity_key_hash ON users(identity_key_hash);
-CREATE INDEX IF NOT EXISTS idx_messages_undelivered ON messages(recipient_id) WHERE delivered_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_chat_events_pending ON chat_events(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_read_receipts_pending ON read_receipts(recipient_id);

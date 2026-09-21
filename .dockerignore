@@ -9,14 +9,8 @@ logs
 *.log
 boot.log
 docs
-implementation_plan.md
-flow_audit_and_improvements.md
-codebase_audit_report.md
-codebase_audit_prompts.md
-task.md
-walkthrough.md
-MEMORY.md
-DEPLOYMENT_GUIDE.md
+plans
+audits
 .vscode
 .dockerignore
 Dockerfile

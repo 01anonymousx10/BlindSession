@@ -11,6 +11,8 @@ let clientSession = {
   contacts: [],          // Array of { fingerprint }
   activeContact: null,   // Selected contact object
   activeSessionKey: null, // Derived symmetric key for active contact
+  unlockedKey: null,     // Argon2id-derived identity key (kept in memory, zeroed on lock/shred)
+  prevPreKeyPrivateKey: null, // Previous X25519 private key (kept to decrypt msgs sent under old prekey)
   // ─── New real-time state maps ──────────────
   presence: {},          // fingerprint -> 'online' | 'offline'
   chatActive: {},        // fingerprint -> boolean (recipient viewing our chat)
@@ -612,7 +614,8 @@ async function handleGenerateIdentity() {
     if (rcDisplay) rcDisplay.textContent = recoveryPhrase;
 
     // Store plain recovery code temporarily for backup export.
-    // Removed from localStorage after first backup download or session end.
+    // Deleted from localStorage after the first successful export
+    // (handleExportBackup) or on shred/lock — the backup file is the copy.
     localStorage.setItem('recovery_code_plain', recoveryPhrase);
 
     // Zero-knowledge server sync: store recovery ciphertext in database
@@ -693,6 +696,13 @@ function encryptAndStoreKeys(passphrase) {
   const plainText = JSON.stringify(rawKeys);
   const encrypted = window.SecureCrypto.encrypt(plainText, key);
 
+  // Keep the derived key (not the passphrase) in session memory so prekey
+  // rotation can re-encrypt without re-prompting. Zeroed on lock/shred.
+  if (clientSession.unlockedKey) {
+    try { sodium.memzero(clientSession.unlockedKey); } catch (e) {}
+  }
+  clientSession.unlockedKey = key;
+
   // Versioned blob shape: `kdf` tags the derivation so legacy (Blake2b) blobs
   // can still be read and migrated on unlock (see handleUnlockIdentity).
   localStorage.setItem('encrypted_identity', JSON.stringify({
@@ -701,8 +711,33 @@ function encryptAndStoreKeys(passphrase) {
     ciphertext: encrypted.ciphertext,
     nonce: encrypted.nonce
   }));
+}
 
-  sodium.memzero(key);
+/**
+ * Re-encrypts the stored identity blob with the session's derived key.
+ * Used by rotatePreKey — reuses the blob's existing salt since the key was
+ * derived from it. The passphrase is never kept in memory.
+ */
+function reencryptStoredKeys() {
+  if (!clientSession.unlockedKey) return;
+  const sodium = window.sodium;
+  const blob = JSON.parse(localStorage.getItem('encrypted_identity') || 'null');
+  if (!blob || !blob.salt) return;
+
+  const rawKeys = {
+    identityPublicKey: clientSession.identityPublicKey,
+    identityPrivateKey: clientSession.identityPrivateKey,
+    preKeyPublicKey: clientSession.preKeyPublicKey,
+    preKeyPrivateKey: clientSession.preKeyPrivateKey,
+    identityKeyHash: clientSession.identityKeyHash
+  };
+  const encrypted = window.SecureCrypto.encrypt(JSON.stringify(rawKeys), clientSession.unlockedKey);
+  localStorage.setItem('encrypted_identity', JSON.stringify({
+    kdf: 'argon2id',
+    salt: blob.salt,
+    ciphertext: encrypted.ciphertext,
+    nonce: encrypted.nonce
+  }));
 }
 
 /**
@@ -718,9 +753,19 @@ async function handleUnlockIdentity() {
     return;
   }
 
+  // Ensure libsodium is ready before any hashing (duress check below).
+  await window.SecureCrypto.init();
+
   // ─── Duress Passphrase Check (Silent Panic Shredder) ─────────────
-  const duressPassphrase = localStorage.getItem('duress_passphrase');
-  if (duressPassphrase && passphrase === duressPassphrase) {
+  // Stored as a SHA-256 hash — the plaintext is never persisted, so a
+  // localStorage read can't reveal that a duress passphrase exists or
+  // what its value is. Legacy plaintext entries are migrated on unlock.
+  const duressHash = localStorage.getItem('duress_passphrase_hash');
+  const legacyDuress = localStorage.getItem('duress_passphrase');
+  const duressTriggered =
+    (duressHash && window.SecureCrypto.hashString(passphrase) === duressHash) ||
+    (legacyDuress && passphrase === legacyDuress);
+  if (duressTriggered) {
     console.warn('🚨 DURESS PASSPHRASE DETECTED: Triggering silent shredder.');
     handlePanicShredder(true);
     document.getElementById('login-passphrase').value = '';
@@ -762,13 +807,15 @@ async function handleUnlockIdentity() {
 
     // decrypt() THROWS on a wrong passphrase (auth-tag mismatch), which falls
     // straight into the outer catch and renders "Invalid passphrase" — no
-    // sentinel-string check needed. The key must be zeroed before the throw so
-    // it never leaks.
+    // sentinel-string check needed. On failure the key is zeroed; on success
+    // it becomes clientSession.unlockedKey so the session can re-encrypt the
+    // identity blob (prekey rotation) without retaining the passphrase.
     let decryptedJson;
     try {
       decryptedJson = window.SecureCrypto.decrypt(blob.ciphertext, blob.nonce, key);
-    } finally {
+    } catch (decryptErr) {
       sodium.memzero(key);
+      throw decryptErr;
     }
 
     const keys = JSON.parse(decryptedJson);
@@ -778,14 +825,25 @@ async function handleUnlockIdentity() {
     clientSession.preKeyPublicKey = keys.preKeyPublicKey;
     clientSession.preKeyPrivateKey = keys.preKeyPrivateKey;
     clientSession.identityKeyHash = keys.identityKeyHash;
-    clientSession.unlockedPassphrase = passphrase;
 
     // Transparent migration: a legacy (Blake2b) blob just unlocked correctly,
     // so rewrite it in the new Argon2id shape so future unlocks use the strong
-    // KDF. We do this after the keys are loaded into the session so
-    // encryptAndStoreKeys (which reads clientSession) writes the right payload.
+    // KDF. encryptAndStoreKeys also stores the fresh derived key in session.
     if (legacy) {
+      sodium.memzero(key);
       encryptAndStoreKeys(passphrase);
+    } else {
+      if (clientSession.unlockedKey) {
+        try { sodium.memzero(clientSession.unlockedKey); } catch (e) {}
+      }
+      clientSession.unlockedKey = key;
+    }
+
+    // Migrate a legacy plaintext duress passphrase to its SHA-256 hash so the
+    // raw value stops living in localStorage.
+    if (legacyDuress) {
+      localStorage.setItem('duress_passphrase_hash', window.SecureCrypto.hashString(legacyDuress));
+      localStorage.removeItem('duress_passphrase');
     }
 
     enterChatDashboard();
@@ -809,9 +867,9 @@ async function handleInstantDemo() {
     const identityKeys = window.SecureCrypto.generateIdentityKeyPair();
     const preKeys = window.SecureCrypto.generatePreKeyPair();
 
-    const sodium = window.sodium;
-    const hashBytes = sodium.crypto_generichash(32, sodium.from_base64(identityKeys.publicKey));
-    const identityKeyHash = sodium.to_hex(hashBytes);
+    // Demo fingerprint uses the same SHA-256 derivation as production
+    // (computeHash) so the displayed hash is consistent with real identities.
+    const identityKeyHash = window.SecureCrypto.computeHash(identityKeys.publicKey);
 
     clientSession.identityPublicKey = identityKeys.publicKey;
     clientSession.identityPrivateKey = identityKeys.privateKey;
@@ -1367,6 +1425,16 @@ async function handleSelectContact(contact) {
       throw new Error('Handshake verification failed: Corrupted/Untrusted Prekey Signature');
     }
 
+    // Bind the bundle to the claimed fingerprint — a malicious server could
+    // otherwise return a different user's key bundle for this hash.
+    // (Skipped for the demo bot — its mock identity is random per session.)
+    if (contact.fingerprint !== 'e00000000000000000000000000000000000000000000000000000000000000e') {
+      const bundleHash = window.SecureCrypto.computeHash(bundle.public_identity_key);
+      if (bundleHash !== contact.fingerprint) {
+        throw new Error('Handshake verification failed: identity key does not match fingerprint');
+      }
+    }
+
     clientSession.activeSessionKey = window.SecureCrypto.deriveSessionKey(
       clientSession.preKeyPrivateKey,
       bundle.public_prekey
@@ -1493,24 +1561,26 @@ async function fetchOfflineMessages() {
     const data = await response.json();
 
     // Cache sender prekey bundles so we only fetch each sender once.
-    const sessionKeyCache = {}; // sender_hash -> Uint8Array
+    // Each entry is an array of candidate session keys (current + previous
+    // prekey) so a message encrypted under either survives rotation races.
+    const sessionKeyCache = {}; // sender_hash -> Uint8Array[]
 
     for (const msg of data.messages) {
-      // Resolve (or reuse) the per-sender session key.
-      let sessionKey = sessionKeyCache[msg.sender_hash];
+      // Resolve (or reuse) the per-sender candidate keys.
+      let candidateKeys = sessionKeyCache[msg.sender_hash];
 
       // Fast path: if this message is from the active contact, the
       // activeSessionKey is already derived and verified.
-      if (!sessionKey &&
+      if (!candidateKeys &&
           clientSession.activeContact &&
           msg.sender_hash === clientSession.activeContact.fingerprint &&
           clientSession.activeSessionKey) {
-        sessionKey = clientSession.activeSessionKey;
-        sessionKeyCache[msg.sender_hash] = sessionKey;
+        candidateKeys = [clientSession.activeSessionKey];
+        sessionKeyCache[msg.sender_hash] = candidateKeys;
       }
 
-      // Slow path: fetch the sender's prekey bundle and derive the key.
-      if (!sessionKey) {
+      // Slow path: fetch the sender's prekey bundle and derive the keys.
+      if (!candidateKeys) {
         try {
           const res = await fetch(`${window.location.origin}/api/users/${msg.sender_hash}`);
           if (!res.ok) {
@@ -1518,11 +1588,36 @@ async function fetchOfflineMessages() {
             continue;
           }
           const bundle = await res.json();
-          sessionKey = window.SecureCrypto.deriveSessionKey(
+
+          // Verify the bundle belongs to the claimed sender — a malicious
+          // server could otherwise substitute a forged prekey and inject
+          // ciphertext it can read.
+          const bundleHash = window.SecureCrypto.computeHash(bundle.public_identity_key);
+          if (bundleHash !== msg.sender_hash) {
+            console.warn(`Skipping offline message: identity hash mismatch for ${msg.sender_hash.substring(0, 8)}…`);
+            continue;
+          }
+          const sigOk = await window.SecureCrypto.verifySignature(
+            bundle.prekey_signature,
+            bundle.public_prekey,
+            bundle.public_identity_key
+          );
+          if (!sigOk) {
+            console.warn(`Skipping offline message: invalid prekey signature from ${msg.sender_hash.substring(0, 8)}…`);
+            continue;
+          }
+
+          candidateKeys = [window.SecureCrypto.deriveSessionKey(
             clientSession.preKeyPrivateKey,
             bundle.public_prekey
-          );
-          sessionKeyCache[msg.sender_hash] = sessionKey;
+          )];
+          if (clientSession.prevPreKeyPrivateKey) {
+            candidateKeys.push(window.SecureCrypto.deriveSessionKey(
+              clientSession.prevPreKeyPrivateKey,
+              bundle.public_prekey
+            ));
+          }
+          sessionKeyCache[msg.sender_hash] = candidateKeys;
         } catch (err) {
           console.warn(`Failed to derive key for offline message from ${msg.sender_hash.substring(0, 8)}…`, err);
           continue;
@@ -1533,14 +1628,20 @@ async function fetchOfflineMessages() {
       // DELETEd the whole queue, so a dropped message here is simply lost —
       // it was undecryptable garbage anyway. Skip it and keep processing the
       // rest of the batch; never persist an error string as a fake bubble.
-      let decryptedText;
-      try {
-        decryptedText = window.SecureCrypto.decrypt(
-          msg.ciphertext,
-          msg.nonce,
-          sessionKey
-        );
-      } catch (err) {
+      // Try each candidate key (current prekey, then previous prekey) so a
+      // message sent under our pre-rotation key still decrypts.
+      let decryptedText = null;
+      for (const key of candidateKeys) {
+        try {
+          decryptedText = window.SecureCrypto.decrypt(
+            msg.ciphertext,
+            msg.nonce,
+            key
+          );
+          break;
+        } catch (err) { /* try next candidate key */ }
+      }
+      if (decryptedText === null) {
         console.warn(`Skipping undecryptable offline message ${msg.id || '(no id)'}`);
         continue;
       }
@@ -1821,10 +1922,53 @@ async function handleSendE2eeMessage() {
 /**
  * 7. Process Incoming E2EE Real-time Socket Message
  */
+
+/**
+ * Attempts to decrypt a message that failed with the cached session key.
+ * Covers both prekey-rotation races:
+ *  1. Sender rotated THEIR prekey → re-fetch their bundle, derive with our
+ *     current private key.
+ *  2. WE rotated OUR prekey → the sender encrypted under our old public key,
+ *     so derive with the stashed previous private key.
+ * Returns { text, adoptedKey } on success or null if all attempts fail.
+ */
+async function tryReDecryptMessage(msg) {
+  if (msg.sender_hash === 'e00000000000000000000000000000000000000000000000000000000000000e') return null;
+  try {
+    const res = await fetch(`${window.location.origin}/api/users/${msg.sender_hash}`);
+    if (!res.ok) return null;
+    const bundle = await res.json();
+
+    const bundleHash = window.SecureCrypto.computeHash(bundle.public_identity_key);
+    if (bundleHash !== msg.sender_hash) return null;
+    const sigOk = await window.SecureCrypto.verifySignature(
+      bundle.prekey_signature,
+      bundle.public_prekey,
+      bundle.public_identity_key
+    );
+    if (!sigOk) return null;
+
+    const privateKeys = [clientSession.preKeyPrivateKey];
+    if (clientSession.prevPreKeyPrivateKey) privateKeys.push(clientSession.prevPreKeyPrivateKey);
+
+    for (const privKey of privateKeys) {
+      const candidateKey = window.SecureCrypto.deriveSessionKey(privKey, bundle.public_prekey);
+      try {
+        const text = window.SecureCrypto.decrypt(msg.ciphertext, msg.nonce, candidateKey);
+        return { text, adoptedKey: candidateKey };
+      } catch (e) { /* try next candidate */ }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function handleIncomingE2eeMessage(msg) {
   if (clientSession.activeContact && msg.sender_hash === clientSession.activeContact.fingerprint) {
-    // decrypt() throws on a bad ciphertext — skip silently, don't crash the
-    // realtime handler or persist an error string as a fake bubble.
+    // decrypt() throws on a bad ciphertext — before dropping the message,
+    // re-derive the session key in case either side rotated their prekey
+    // mid-session (rotatePreKey on login invalidates the cached key).
     let decryptedText;
     try {
       decryptedText = window.SecureCrypto.decrypt(
@@ -1833,8 +1977,15 @@ async function handleIncomingE2eeMessage(msg) {
         clientSession.activeSessionKey
       );
     } catch (err) {
-      console.warn(`Skipping undecryptable realtime message from ${msg.sender_hash}`);
-      return;
+      const retried = await tryReDecryptMessage(msg);
+      if (retried) {
+        decryptedText = retried.text;
+        clientSession.activeSessionKey = retried.adoptedKey;
+        console.log(`Session key re-derived for ${msg.sender_hash.substring(0, 8)}… after prekey rotation`);
+      } else {
+        console.warn(`Skipping undecryptable realtime message from ${msg.sender_hash}`);
+        return;
+      }
     }
 
     let isImage = false;
@@ -1867,16 +2018,42 @@ async function handleIncomingE2eeMessage(msg) {
       const res = await fetch(`${window.location.origin}/api/users/${msg.sender_hash}`);
       if (res.ok) {
         const bundle = await res.json();
-        const contactSessionKey = window.SecureCrypto.deriveSessionKey(
-          clientSession.preKeyPrivateKey,
-          bundle.public_prekey
-        );
 
-        const decryptedText = window.SecureCrypto.decrypt(
-          msg.ciphertext,
-          msg.nonce,
-          contactSessionKey
+        // Verify the bundle belongs to the claimed sender before deriving a
+        // session key — a malicious server could otherwise inject a forged
+        // prekey and deliver ciphertext encrypted under a key IT controls.
+        const bundleHash = window.SecureCrypto.computeHash(bundle.public_identity_key);
+        if (bundleHash !== msg.sender_hash) {
+          console.warn(`Rejected message: identity hash mismatch for ${msg.sender_hash.substring(0, 8)}…`);
+          return;
+        }
+        const sigOk = await window.SecureCrypto.verifySignature(
+          bundle.prekey_signature,
+          bundle.public_prekey,
+          bundle.public_identity_key
         );
+        if (!sigOk) {
+          console.warn(`Rejected message: invalid prekey signature from ${msg.sender_hash.substring(0, 8)}…`);
+          return;
+        }
+
+        // Derive with the current prekey first; fall back to the previous one
+        // in case the sender encrypted under our pre-rotation public key.
+        const privKeys = [clientSession.preKeyPrivateKey];
+        if (clientSession.prevPreKeyPrivateKey) privKeys.push(clientSession.prevPreKeyPrivateKey);
+
+        let decryptedText = null;
+        for (const privKey of privKeys) {
+          const candidateKey = window.SecureCrypto.deriveSessionKey(privKey, bundle.public_prekey);
+          try {
+            decryptedText = window.SecureCrypto.decrypt(msg.ciphertext, msg.nonce, candidateKey);
+            break;
+          } catch (e) { /* try next candidate */ }
+        }
+        if (decryptedText === null) {
+          console.warn(`Skipping undecryptable background message from ${msg.sender_hash.substring(0, 8)}…`);
+          return;
+        }
 
         let isImage = false;
         let parsedBg = null;
@@ -2641,6 +2818,14 @@ function handleLockSession() {
   clientSession.preKeyPublicKey = null;
   clientSession.preKeyPrivateKey = null;
   clientSession.activeSessionKey = null;
+  if (clientSession.unlockedKey && window.sodium) {
+    try { window.sodium.memzero(clientSession.unlockedKey); } catch (e) {}
+  }
+  clientSession.unlockedKey = null;
+  if (clientSession.prevPreKeyPrivateKey && window.sodium) {
+    try { window.sodium.memzero(clientSession.prevPreKeyPrivateKey); } catch (e) {}
+  }
+  clientSession.prevPreKeyPrivateKey = null;
   clientSession.activeContact = null;
   clientSession.presence = {};
   clientSession.chatActive = {};
@@ -3741,6 +3926,20 @@ async function handlePanicShredder(silent = false) {
         console.error('Failed to zero session key buffer:', e);
       }
     }
+    if (clientSession.unlockedKey) {
+      try {
+        window.sodium.memzero(clientSession.unlockedKey);
+      } catch (e) {
+        console.error('Failed to zero unlock key buffer:', e);
+      }
+    }
+    if (clientSession.prevPreKeyPrivateKey) {
+      try {
+        window.sodium.memzero(clientSession.prevPreKeyPrivateKey);
+      } catch (e) {
+        console.error('Failed to zero previous prekey buffer:', e);
+      }
+    }
   }
 
   // 3. Clear all local storage keys related to this app
@@ -3752,6 +3951,7 @@ async function handlePanicShredder(silent = false) {
         key === 'recovery_code_plain' ||
         key === 'my_display_name' ||
         key === 'duress_passphrase' ||
+        key === 'duress_passphrase_hash' ||
         key === 'contacts' ||
         key.startsWith('history_') ||
         key.startsWith('read_count_') ||
@@ -3776,6 +3976,8 @@ async function handlePanicShredder(silent = false) {
     contacts: [],
     activeContact: null,
     activeSessionKey: null,
+    unlockedKey: null,
+    prevPreKeyPrivateKey: null,
     presence: {},
     chatActive: {},
     typing: {},
@@ -4186,7 +4388,17 @@ function openProfileModal() {
   }
   const duressInput = document.getElementById('edit-duress-passphrase-input');
   if (duressInput) {
-    duressInput.value = localStorage.getItem('duress_passphrase') || '';
+    // The stored value is a hash — can't pre-fill. If one is set, show a
+    // masked state so the user knows it exists; typing replaces it, and the
+    // "Remove" link (added below) clears it.
+    const hasDuress = !!(localStorage.getItem('duress_passphrase_hash') || localStorage.getItem('duress_passphrase'));
+    duressInput.value = '';
+    delete duressInput.dataset.cleared;
+    duressInput.placeholder = hasDuress
+      ? '●●●●●●●● currently set — type new to replace'
+      : 'Set a secondary panic-shred passphrase';
+    const clearLink = document.getElementById('duress-clear-btn');
+    if (clearLink) clearLink.style.display = hasDuress ? '' : 'none';
   }
   const overlay = document.getElementById('profile-overlay');
   if (overlay) {
@@ -4226,12 +4438,16 @@ async function handleSaveProfileName() {
   clientSession.displayName = newName;
   localStorage.setItem('my_display_name', newName);
 
-  // Duress passphrase handling
+  // Duress passphrase handling — stored as SHA-256 hash, never plaintext.
+  // Empty field = keep existing (if set). The "Remove" button marks the
+  // input cleared so an intentional wipe still works.
   const duressInput = document.getElementById('edit-duress-passphrase-input');
   const duressPass = duressInput ? duressInput.value.trim() : '';
   if (duressPass) {
-    localStorage.setItem('duress_passphrase', duressPass);
-  } else {
+    localStorage.setItem('duress_passphrase_hash', window.SecureCrypto.hashString(duressPass));
+    localStorage.removeItem('duress_passphrase'); // clear any legacy plaintext
+  } else if (duressInput && duressInput.dataset.cleared === 'true') {
+    localStorage.removeItem('duress_passphrase_hash');
     localStorage.removeItem('duress_passphrase');
   }
 
@@ -4407,7 +4623,17 @@ function handleExportBackup() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  showToast('Backup downloaded! Keep this file safe — it contains your recovery code.', 'success', 5000);
+  // Remove the plaintext recovery code from localStorage now that it's been
+  // exported — the backup file is the only copy and the user is told to keep
+  // it safe. Leaving it in localStorage indefinitely would expose it to any
+  // localStorage reader.
+  localStorage.removeItem('recovery_code_plain');
+
+  if (recoveryCodePlain) {
+    showToast('Backup downloaded! Keep this file safe — it contains your recovery code.', 'success', 5000);
+  } else {
+    showToast('Backup downloaded! Keep this file safe.', 'success', 4000);
+  }
 }
 
 /**
@@ -4589,11 +4815,19 @@ async function rotatePreKey() {
     });
 
     if (res.ok) {
+      // Stash the outgoing private prekey so messages already encrypted under
+      // the OLD public prekey (contacts whose session key we derived before
+      // this rotation) can still be decrypted — see tryReDecryptMessage.
+      if (clientSession.prevPreKeyPrivateKey && window.sodium) {
+        try { window.sodium.memzero(clientSession.prevPreKeyPrivateKey); } catch (e) {}
+      }
+      clientSession.prevPreKeyPrivateKey = clientSession.preKeyPrivateKey;
+
       clientSession.preKeyPublicKey = newPreKeys.publicKey;
       clientSession.preKeyPrivateKey = newPreKeys.privateKey;
 
-      if (clientSession.unlockedPassphrase) {
-        encryptAndStoreKeys(clientSession.unlockedPassphrase);
+      if (clientSession.unlockedKey) {
+        reencryptStoredKeys();
       }
       console.log('🔄 Automated X25519 prekey rotation completed successfully.');
     }

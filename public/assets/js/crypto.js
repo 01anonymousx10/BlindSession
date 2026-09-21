@@ -165,63 +165,20 @@ class SecureCrypto {
   }
 
   /**
-   * Performs a symmetric ratchet step from a chain key to derive a message key and next chain key.
-   * Provides forward & backward secrecy via Blake2b KDF step.
-   * @param {Uint8Array|string} chainKey - Current 32-byte chain key (Uint8Array or base64).
-   * @returns {{ messageKey: Uint8Array, nextChainKey: Uint8Array }}
-   */
-  ratchetStep(chainKey) {
-    const keyBytes = typeof chainKey === 'string' ? this.sodium.from_base64(chainKey) : chainKey;
-    const msgKeyTag = this.sodium.from_string('MESSAGE_KEY');
-    const chainKeyTag = this.sodium.from_string('CHAIN_KEY');
-
-    const messageKey = this.sodium.crypto_generichash(32, msgKeyTag, keyBytes);
-    const nextChainKey = this.sodium.crypto_generichash(32, chainKeyTag, keyBytes);
-
-    return { messageKey, nextChainKey };
-  }
-
-  /**
-   * Encrypts a message using a one-time message key derived from the symmetric ratchet chain key.
-   * Immediately clears the one-time message key from memory.
-   */
-  ratchetEncrypt(plainText, chainKey) {
-    const { messageKey, nextChainKey } = this.ratchetStep(chainKey);
-    try {
-      const encrypted = this.encrypt(plainText, messageKey);
-      return {
-        ciphertext: encrypted.ciphertext,
-        nonce: encrypted.nonce,
-        nextChainKey: nextChainKey
-      };
-    } finally {
-      this.sodium.memzero(messageKey);
-    }
-  }
-
-  /**
-   * Decrypts a message using a one-time message key derived from the symmetric ratchet chain key.
-   * Immediately clears the one-time message key from memory.
-   */
-  ratchetDecrypt(ciphertextBase64, nonceBase64, chainKey) {
-    const { messageKey, nextChainKey } = this.ratchetStep(chainKey);
-    try {
-      const plainText = this.decrypt(ciphertextBase64, nonceBase64, messageKey);
-      return {
-        plainText: plainText,
-        nextChainKey: nextChainKey
-      };
-    } finally {
-      this.sodium.memzero(messageKey);
-    }
-  }
-
-  /**
    * Computes a SHA-256 fingerprint hash of a public key.
    */
   computeHash(publicKeyBase64) {
     const publicKey = this.sodium.from_base64(publicKeyBase64);
     const hash = this.sodium.crypto_hash_sha256(publicKey);
+    return this.sodium.to_hex(hash);
+  }
+
+  /**
+   * Computes a SHA-256 hex digest of an arbitrary string (e.g. duress
+   * passphrase). Used for equality checks so the plaintext is never stored.
+   */
+  hashString(text) {
+    const hash = this.sodium.crypto_hash_sha256(this.sodium.from_string(text));
     return this.sodium.to_hex(hash);
   }
 

@@ -61,7 +61,11 @@ const start = async () => {
         );
       `);
       await db.query('CREATE INDEX IF NOT EXISTS idx_read_receipts_pending ON read_receipts(recipient_id)');
-      console.log('✅ Database schema verified (chat_events + read_receipts tables ready).');
+
+      // Auto-migrate: add message_id to messages for delivery-receipt
+      // correlation on existing databases created before the column existed.
+      await db.query('ALTER TABLE messages ADD COLUMN IF NOT EXISTS message_id VARCHAR(64)');
+      console.log('✅ Database schema verified (chat_events + read_receipts + message_id ready).');
     } catch (dbErr) {
       console.warn('⚠️ Warning: Failed to connect to PostgreSQL database. Running in offline/degraded mode:', dbErr.message);
     }

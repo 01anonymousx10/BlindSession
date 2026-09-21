@@ -19,6 +19,12 @@
   <link rel="stylesheet" href="assets/css/style.css?v=5">
   <style>
     /* Styling overrides for premium, glassmorphism & matrix dark aesthetics */
+
+    /* Defensive duplicate of the .hidden rule from style.css — every show/hide
+       toggle in the app depends on this class; if the external stylesheet ever
+       fails to load, the whole screen-switching system would break without it. */
+    .hidden { display: none !important; }
+
     :root {
       --primary: #00ff9d;
       --secondary: #00b3ff;
@@ -5103,6 +5109,9 @@
             <input type="password" id="edit-duress-passphrase-input" class="auth-input"
               style="width: 100%; box-sizing: border-box; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,77,77,0.2); border-radius: 4px; padding: 0.75rem; color: white;"
               placeholder="Set a secondary panic-shred passphrase">
+            <button type="button" id="duress-clear-btn"
+              style="display:none; background:none; border:none; color:var(--color-error-text); font-size:0.78rem; cursor:pointer; text-decoration:underline; margin-top:4px; padding:0;"
+              onclick="document.getElementById('edit-duress-passphrase-input').value='';document.getElementById('edit-duress-passphrase-input').dataset.cleared='true';this.style.display='none';document.getElementById('edit-duress-passphrase-input').placeholder='Will be removed on save'">Remove duress passphrase</button>
             <p style="font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 0.5rem; line-height: var(--leading-normal);">
               * Entering this passphrase on the login screen silently wipes all local keys, history, and deletes the
               account from the server.

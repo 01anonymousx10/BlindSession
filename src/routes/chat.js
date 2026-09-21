@@ -50,12 +50,12 @@ export default async function chatRoutes(fastify, options) {
 
       // 3. Recipient is offline (or WS manager unavailable): queue in DB.
       const insertQuery = `
-        INSERT INTO messages (sender_id, recipient_id, ciphertext, nonce)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO messages (sender_id, recipient_id, ciphertext, nonce, message_id)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id, created_at;
       `;
 
-      const result = await db.query(insertQuery, [senderId, recipientId, ciphertext, nonce]);
+      const result = await db.query(insertQuery, [senderId, recipientId, ciphertext, nonce, message_id || null]);
       const message = result.rows[0];
 
       return reply.send({
@@ -76,12 +76,14 @@ export default async function chatRoutes(fastify, options) {
     const userId = request.user.id;
 
     try {
-      // 1. Query all undelivered messages for this recipient
+      // 1. Query all undelivered messages for this recipient.
+      // delivered_at no longer exists — rows are deleted on retrieval, so
+      // every row in this table is by definition undelivered.
       const selectQuery = `
-        SELECT m.id, u.identity_key_hash as sender_hash, m.ciphertext, m.nonce, m.created_at
+        SELECT m.id, u.identity_key_hash as sender_hash, m.ciphertext, m.nonce, m.created_at, m.message_id
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_id = $1 AND m.delivered_at IS NULL
+        WHERE m.recipient_id = $1
         ORDER BY m.created_at ASC;
       `;
 
@@ -91,9 +93,8 @@ export default async function chatRoutes(fastify, options) {
       if (messages.length > 0) {
         const messageIds = messages.map(m => m.id);
 
-        // 2. E2EE Privacy Policy: Delete the messages or mark as delivered immediately to minimize metadata.
-        // We will update delivered_at and clean them up (or delete them entirely to stay metadata-blind).
-        // Let's delete them from the queue so they no longer live on the server database.
+        // 2. E2EE Privacy Policy: delete the messages immediately after
+        // retrieval so ciphertext never lives on the server post-delivery.
         const deleteQuery = `
           DELETE FROM messages
           WHERE id = ANY($1::uuid[]);
@@ -101,8 +102,8 @@ export default async function chatRoutes(fastify, options) {
         await db.query(deleteQuery, [messageIds]);
 
         // 3. Notify each sender that their queued message was just delivered.
-        // This upgrades the sender's gray ✓ to a blue ✓ (delivered) even
-        // though the message was originally queued while they were offline.
+        // Include the original message_id so the sender's client can match
+        // this receipt to the exact sent bubble (fixes rapid-send mis-marks).
         if (fastify.websocketServerManager) {
           for (const msg of messages) {
             if (msg.sender_hash) {
@@ -110,7 +111,7 @@ export default async function chatRoutes(fastify, options) {
                 type: 'delivered',
                 recipient: request.user.identity_key_hash,
                 status: 'delivered',
-                message_id: null
+                message_id: msg.message_id || null
               });
             }
           }

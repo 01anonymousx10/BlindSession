@@ -98,7 +98,6 @@ export default async function authRoutes(fastify, options) {
     try {
       // Delete the user row. ON DELETE CASCADE on messages.sender_id
       // and messages.recipient_id automatically purges queued ciphertext.
-      // one_time_prekeys also cascade-deleted.
       const deleteResult = await db.query('DELETE FROM users WHERE id = $1 RETURNING identity_key_hash', [userId]);
 
       if (deleteResult.rowCount === 0) {
